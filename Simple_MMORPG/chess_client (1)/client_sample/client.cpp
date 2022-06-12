@@ -27,9 +27,9 @@ constexpr auto SCREEN_WIDTH = 16;
 constexpr auto SCREEN_HEIGHT = 16;
 
 constexpr auto TILE_WIDTH = 65;
-constexpr auto TILE_HEIGHT = 512;
-constexpr auto WINDOW_WIDTH = TILE_WIDTH * SCREEN_WIDTH + 10;   // size of window
-constexpr auto WINDOW_HEIGHT = TILE_WIDTH * SCREEN_WIDTH + 10;
+constexpr auto TILE_HEIGHT = 65;
+constexpr auto WINDOW_WIDTH = 65 * SCREEN_WIDTH + 10;   // size of window
+constexpr auto WINDOW_HEIGHT = 65 * SCREEN_WIDTH + 10;
 
 int g_left_x;
 int g_top_y;
@@ -97,7 +97,7 @@ void client_initialize()
 	pieces = new sf::Texture;
 	board->loadFromFile("Texture/Map/0.png");
 	pieces->loadFromFile("Texture/Player/stand_8/0.png");
-	white_tile = OBJECT{ *board, 512, 256, TILE_WIDTH, TILE_WIDTH };
+	white_tile = OBJECT{ *board, 500, 220, TILE_WIDTH, TILE_HEIGHT };
 	//black_tile = OBJECT{ *board, 600, 300, TILE_WIDTH, TILE_WIDTH };
 	//red_tile = OBJECT{ *board, 69, 69, TILE_WIDTH, TILE_WIDTH };
 	avatar = OBJECT{ *pieces, 69, 50, 200, 200 };
@@ -231,8 +231,8 @@ void client_main()
 			int tile_x = i + g_left_x;
 			int tile_y = j + g_top_y;
 			if ((tile_x < 0) || (tile_y < 0)) continue;
-			if (((tile_x + tile_y) % 6) <= 2) {
-				white_tile.a_move(TILE_WIDTH * i + 1, TILE_WIDTH * j + 1);
+			if (((tile_x + tile_y) % 2) <= 1) {
+				white_tile.a_move(65 * i + 1, 65 * j + 1);
 				white_tile.a_draw();
 			}
 			/*else if (((tile_x + tile_y) % 6) > 2 && ((tile_x + tile_y) % 6) <= 4)

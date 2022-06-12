@@ -1,4 +1,0 @@
-﻿  main.cpp
-C:\Users\wc542\OneDrive\바탕 화면\수업\게임서버\chess - 복사본\Server\Server\main.cpp(412,35): warning C4244: '인수': 'ULONG_PTR'에서 'int'(으)로 변환하면서 데이터가 손실될 수 있습니다.
-C:\Users\wc542\OneDrive\바탕 화면\수업\게임서버\chess - 복사본\Server\Server\main.cpp(432,35): warning C4244: '인수': 'ULONG_PTR'에서 'int'(으)로 변환하면서 데이터가 손실될 수 있습니다.
-  Server.vcxproj -> C:\Users\wc542\OneDrive\바탕 화면\수업\게임서버\chess - 복사본\Server\x64\Debug\Server.exe
