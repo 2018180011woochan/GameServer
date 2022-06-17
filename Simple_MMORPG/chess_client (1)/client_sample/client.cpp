@@ -2,6 +2,7 @@
 #include <SFML/Graphics.hpp>
 #include <SFML/Network.hpp>
 #include <iostream>
+#include <chrono>
 using namespace std;
 
 #ifdef _DEBUG
@@ -79,18 +80,16 @@ public:
 		m_sprite.setPosition(rx, ry);
 		g_window->draw(m_sprite);
 	}
-	void draw(int x, int y) {
-		if (false == m_showing) return;
-
-		m_sprite.setPosition(x, y);
-		g_window->draw(m_sprite);
+	bool isShow()
+	{
+		return m_showing;
 	}
 };
 
 OBJECT avatar;
 OBJECT players[MAX_USER];
 OBJECT npcs[NUM_NPC];
-OBJECT PlayerSkill;
+vector<OBJECT> PlayerSkill;
 
 OBJECT white_tile;
 //OBJECT black_tile;
@@ -114,9 +113,14 @@ void client_initialize()
 	white_tile = OBJECT{ *board, 500, 220, TILE_WIDTH, TILE_HEIGHT };
 	//black_tile = OBJECT{ *board, 600, 300, TILE_WIDTH, TILE_WIDTH };
 	//red_tile = OBJECT{ *board, 69, 69, TILE_WIDTH, TILE_WIDTH };
-	PlayerSkill = OBJECT{ *AttackSource, 0, 0, 66, 167 };
+	
+	for (int i = 0; i < 4; ++i)
+	{
+		PlayerSkill.push_back(OBJECT{ *AttackSource, 0, 120, 60, 60 });
+		//PlayerSkill[i].push_back(OBJECT{ *AttackSource, 0, 120, 60, 60 });
+	}
 
-	avatar = OBJECT{ *pieces, 50, 50, 200, 200 };
+	avatar = OBJECT{ *pieces, 65, 50, 200, 200 };
 	avatar.move(4, 4);
 	for (auto& pl : players) {
 		pl = OBJECT{ *pieces, 50, 50, 200, 200 };
@@ -229,6 +233,8 @@ void process_data(char* net_buf, size_t io_byte)
 	}
 }
 
+unsigned int cnt = 0;
+
 void client_main()
 {
 	char net_buf[BUF_SIZE];
@@ -265,7 +271,23 @@ void client_main()
 			}*/
 		}
 	avatar.draw();
-	PlayerSkill.draw();
+	for (int i = 0; i < 4; ++i)
+		PlayerSkill[i].draw();
+
+	// 임시방편
+	if (PlayerSkill[0].isShow())
+	{
+		cnt++;
+		if (cnt > 100)
+		{
+			for (int i = 0; i < 4; ++i)
+			{
+				PlayerSkill[i].hide();
+			}
+			cnt = 0;
+		}
+	}
+
 	for (auto& pl : players) pl.draw();
 	for (auto& pl : npcs) pl.draw();
 }
@@ -321,12 +343,21 @@ int main()
 				case sf::Keyboard::Down:
 					direction = 1;
 					break;
-				case sf::Keyboard::LControl:
-					PlayerSkill.m_x = avatar.m_x;
-					PlayerSkill.m_y = avatar.m_y;
-					PlayerSkill.show();
-					//PlayerSkill.draw(PlayerSkill.m_x, PlayerSkill.m_y);
-					break; // 스킬 사용
+				case sf::Keyboard::LControl:	// 스킬 사용
+					PlayerSkill[0].m_x = avatar.m_x;
+					PlayerSkill[0].m_y = avatar.m_y - 1;
+					PlayerSkill[0].show();
+					PlayerSkill[1].m_x = avatar.m_x;
+					PlayerSkill[1].m_y = avatar.m_y + 1;
+					PlayerSkill[1].show();
+					PlayerSkill[2].m_x = avatar.m_x - 1;
+					PlayerSkill[2].m_y = avatar.m_y;
+					PlayerSkill[2].show();
+					PlayerSkill[3].m_x = avatar.m_x + 1;
+					PlayerSkill[3].m_y = avatar.m_y;
+					PlayerSkill[3].show();
+					
+					break;
 				case sf::Keyboard::Escape:
 					window.close();
 					break;
