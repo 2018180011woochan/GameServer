@@ -85,10 +85,10 @@ public:
 	}
 	void send_login_info_packet()
 	{
-		SC_LOGIN_INFO_PACKET p;
+		SC_LOGIN_OK_PACKET p;
 		p.id = _id;
-		p.size = sizeof(SC_LOGIN_INFO_PACKET);
-		p.type = SC_LOGIN_INFO;
+		p.size = sizeof(SC_LOGIN_OK_PACKET);
+		p.type = SC_LOGIN_OK;
 		p.x = x;
 		p.y = y;
 		do_send(&p);
@@ -113,10 +113,10 @@ int distance(int a, int b)
 
 void SESSION::send_move_packet(int c_id, int client_time)
 {
-	SC_MOVE_PLAYER_PACKET p;
+	SC_MOVE_OBJECT_PACKET p;
 	p.id = c_id;
-	p.size = sizeof(SC_MOVE_PLAYER_PACKET);
-	p.type = SC_MOVE_PLAYER;
+	p.size = sizeof(SC_MOVE_OBJECT_PACKET);
+	p.type = SC_MOVE_OBJECT;
 	p.x = clients[c_id].x;
 	p.y = clients[c_id].y;
 	p.client_time = client_time;
@@ -186,11 +186,11 @@ void process_packet(int c_id, char* packet)
 				pl.vl.lock();
 				pl.view_list.insert(c_id);
 				pl.vl.unlock();
-				SC_ADD_PLAYER_PACKET add_packet;
+				SC_ADD_OBJECT_PACKET add_packet;
 				add_packet.id = c_id;
 				strcpy_s(add_packet.name, p->name);
 				add_packet.size = sizeof(add_packet);
-				add_packet.type = SC_ADD_PLAYER;
+				add_packet.type = SC_ADD_OBJECT;
 
 				add_packet.x = clients[c_id].x;
 				add_packet.y = clients[c_id].y;
@@ -209,11 +209,11 @@ void process_packet(int c_id, char* packet)
 				clients[c_id].vl.lock();
 				clients[c_id].view_list.insert(pl._id);
 				clients[c_id].vl.unlock();
-				SC_ADD_PLAYER_PACKET add_packet;
+				SC_ADD_OBJECT_PACKET add_packet;
 				add_packet.id = pl._id;
 				strcpy_s(add_packet.name, pl._name);
 				add_packet.size = sizeof(add_packet);
-				add_packet.type = SC_ADD_PLAYER;
+				add_packet.type = SC_ADD_OBJECT;
 				add_packet.x = pl.x;
 				add_packet.y = pl.y;
 				clients[c_id].do_send(&add_packet);
@@ -270,11 +270,11 @@ void process_packet(int c_id, char* packet)
 			// old에는 없고 new에는 있다 -> 새롭게 화면에 들어온 플레이어다 -> AddPlayer패킷 보내기
 			if (oldVL.count(playerindex) == 0)
 			{
-				SC_ADD_PLAYER_PACKET add_packet;
+				SC_ADD_OBJECT_PACKET add_packet;
 				add_packet.id = playerindex;
 				strcpy_s(add_packet.name, clients[playerindex]._name);
 				add_packet.size = sizeof(add_packet);
-				add_packet.type = SC_ADD_PLAYER;
+				add_packet.type = SC_ADD_OBJECT;
 
 				add_packet.x = clients[playerindex].x;
 				add_packet.y = clients[playerindex].y;
@@ -288,11 +288,11 @@ void process_packet(int c_id, char* packet)
 				// 만약 상대방의 viewlist에 없다면 AddPlayer해줌
 				if (clients[playerindex].view_list.count(c_id) == 0)
 				{
-					SC_ADD_PLAYER_PACKET add_packet;
+					SC_ADD_OBJECT_PACKET add_packet;
 					add_packet.id = c_id;
 					strcpy_s(add_packet.name, clients[c_id]._name);
 					add_packet.size = sizeof(add_packet);
-					add_packet.type = SC_ADD_PLAYER;
+					add_packet.type = SC_ADD_OBJECT;
 
 					add_packet.x = clients[c_id].x;
 					add_packet.y = clients[c_id].y;
@@ -314,10 +314,10 @@ void process_packet(int c_id, char* packet)
 			// newVL에 없고 oldVL에 있다 -> 화면에서 벗어남 -> remove 패킷 보내기
 			if (newVL.count(playerindex) == 0)
 			{
-				SC_REMOVE_PLAYER_PACKET p;
+				SC_REMOVE_OBJECT_PACKET p;
 				p.id = playerindex;
 				p.size = sizeof(p);
-				p.type = SC_REMOVE_PLAYER;
+				p.type = SC_REMOVE_OBJECT;
 				clients[c_id].do_send(&p);
 
 				clients[c_id].vl.lock();
@@ -356,10 +356,10 @@ void disconnect(int c_id)
 			continue;
 		}
 
-		SC_REMOVE_PLAYER_PACKET p;
+		SC_REMOVE_OBJECT_PACKET p;
 		p.id = c_id;
 		p.size = sizeof(p);
-		p.type = SC_REMOVE_PLAYER;
+		p.type = SC_REMOVE_OBJECT;
 		pl.do_send(&p);
 		pl._sl.unlock();
 	}
