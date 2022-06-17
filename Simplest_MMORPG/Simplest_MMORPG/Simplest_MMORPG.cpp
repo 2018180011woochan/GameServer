@@ -10,6 +10,7 @@
 
 // 전역 변수:
 HWND	g_hWnd;
+SOCKET  gSocket;
 HINSTANCE hInst;                                // 현재 인스턴스입니다.
 WCHAR szTitle[MAX_LOADSTRING];                  // 제목 표시줄 텍스트입니다.
 WCHAR szWindowClass[MAX_LOADSTRING];            // 기본 창 클래스 이름입니다.
@@ -19,6 +20,12 @@ ATOM                MyRegisterClass(HINSTANCE hInstance);
 BOOL                InitInstance(HINSTANCE, int);
 LRESULT CALLBACK    WndProc(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
+
+void send_packet(void* packet)
+{
+    unsigned char* p = reinterpret_cast<unsigned char*>(packet);
+    auto ret = send(gSocket, (const char*)p, sizeof(p), 0);
+}
 
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
                      _In_opt_ HINSTANCE hPrevInstance,
@@ -50,6 +57,29 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     MainGame.Initialize();
 
     DWORD dwTime = GetTickCount();
+
+    ///////////////// Server Connect ///////////////////////////////
+    WSADATA	wsadata;
+    WSAStartup(MAKEWORD(2, 2), &wsadata);
+
+    //SOCKET sock;
+    SOCKADDR_IN serverAddr;
+    gSocket = WSASocket(AF_INET, SOCK_STREAM, 0, NULL, 0, WSA_FLAG_OVERLAPPED);
+
+    memset(&serverAddr, 0, sizeof(serverAddr));
+    serverAddr.sin_family = AF_INET;
+    serverAddr.sin_addr.s_addr = inet_addr("127.0.0.1");
+    serverAddr.sin_port = htons(PORT_NUM);
+
+    if (connect(gSocket, (SOCKADDR*)&serverAddr, sizeof(serverAddr)) == SOCKET_ERROR)	//서버에 접속한다.
+        cout << "Connect error" << endl;
+    cout << "접속 성공" << endl;
+
+    //CS_LOGIN_PACKET p;
+    //p.size = sizeof(CS_LOGIN_PACKET);
+    //p.type = CS_LOGIN;
+    //send_packet(&p);
+    ////////////////////////////////////////////////////////////////
 
     while (WM_QUIT != msg.message)
     {
@@ -177,6 +207,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         }
         break;
     case WM_DESTROY:
+        closesocket(gSocket);
         PostQuitMessage(0);
         break;
     default:

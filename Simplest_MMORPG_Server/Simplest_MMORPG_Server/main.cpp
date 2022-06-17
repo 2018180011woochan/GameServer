@@ -790,8 +790,8 @@ void initialize_DB()
 
 int main()
 {
-	initialize_npc();
-	initialize_DB();
+	//initialize_npc();
+	//initialize_DB();
 
 	WSADATA WSAData;
 	WSAStartup(MAKEWORD(2, 2), &WSAData);
