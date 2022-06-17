@@ -26,6 +26,7 @@ extern "C" {
 #pragma comment (lib, "lua54.lib")
 
 #include "protocol.h"
+#include "Enum.h"
 
 constexpr int RANGE = 11;
 
@@ -96,11 +97,15 @@ class SESSION {
 public:
 	mutex	_sl;
 	SESSION_STATE _s_state;
-	int _id;
-	int _clientid;
+	//int _clientid;
 	SOCKET _socket;
+	int		_id;
 	short	x, y;
 	char	_name[NAME_SIZE];
+	short	race;
+	short	level;
+	int		exp;
+	int		hp, hpmax;
 	unordered_set <int> view_list;
 	mutex	vl;
 	lua_State* L;
@@ -118,6 +123,11 @@ public:
 		x = rand() % W_WIDTH;
 		y = rand() % W_HEIGHT;
 		_name[0] = 0;
+		race = RACE::RACE_END;
+		level = 1;
+		exp = 0;
+		hpmax = level * 100;
+		hp = hpmax;
 		_s_state = ST_FREE;
 		_prev_remain = 0;
 		next_move_time = chrono::system_clock::now() + chrono::seconds(1);
@@ -150,9 +160,9 @@ public:
 		p.id = _id;
 		p.x = x;
 		p.y = y;
-		p.level = 1;
-		p.exp = 0;
-		p.hpmax = p.level * 100;
+		p.level = level;
+		p.exp = exp;
+		p.hpmax = hpmax;
 		p.hp = p.hpmax;
 		////////////////////////////////////////////////////////////////
 		do_send(&p);
@@ -744,28 +754,60 @@ void initialize_npc()
 	for (int i = 0; i < NUM_NPC + MAX_USER; ++i)
 		clients[i]._id = i;
 	cout << "NPC initialize Begin.\n";
-	for (int i = 0; i < NUM_NPC; ++i) {
-		int npc_id = i + MAX_USER;
+	for (int i = MAX_USER; i < MAX_USER + 60000 ; ++ i)
+	{
+		// Skeleton
+		int npc_id = i;
 		clients[npc_id]._s_state = ST_INGAME;
-		
-		strcpy_s(clients[npc_id]._name, "Wriath");
-		//sprintf_s(clients[npc_id]._name, "M-%d", npc_id);
-		/*lua_State* L = luaL_newstate();
-		clients[npc_id].L = L;
 
-		luaL_openlibs(L);
-		luaL_loadfile(L, "hello.lua");
-		lua_pcall(L, 0, 0, 0);
-
-		lua_getglobal(L, "set_object_id");
-		lua_pushnumber(L, npc_id);
-		lua_pcall(L, 1, 0, 0);
-
-		lua_register(L, "API_chat", API_SendMessage);
-		lua_register(L, "API_get_x", API_get_x);
-		lua_register(L, "API_get_y", API_get_y);
-		lua_register(L, "API_run", API_Run);*/
+		strcpy_s(clients[npc_id]._name, "Skeleton");
 	}
+	for (int i = MAX_USER + 60000; i < MAX_USER + 140000; ++i)
+	{
+		// Wraith
+		int npc_id = i;
+		clients[npc_id]._s_state = ST_INGAME;
+
+		strcpy_s(clients[npc_id]._name, "Wriath");
+	}
+	for (int i = MAX_USER + 140000; i < MAX_USER + 190000; ++i)
+	{
+		// Devil
+		int npc_id = i;
+		clients[npc_id]._s_state = ST_INGAME;
+
+		strcpy_s(clients[npc_id]._name, "Devil");
+	}
+	for (int i = MAX_USER + 190000; i < NUM_NPC; ++i)
+	{
+		// Diablo
+		int npc_id = i;
+		clients[npc_id]._s_state = ST_INGAME;
+
+		strcpy_s(clients[npc_id]._name, "Diablo");
+	}
+	//for (int i = 0; i < NUM_NPC; ++i) {
+	//	int npc_id = i + MAX_USER;
+	//	clients[npc_id]._s_state = ST_INGAME;
+	//	
+	//	strcpy_s(clients[npc_id]._name, "Wriath");
+	//	//sprintf_s(clients[npc_id]._name, "M-%d", npc_id);
+	//	/*lua_State* L = luaL_newstate();
+	//	clients[npc_id].L = L;
+
+	//	luaL_openlibs(L);
+	//	luaL_loadfile(L, "hello.lua");
+	//	lua_pcall(L, 0, 0, 0);
+
+	//	lua_getglobal(L, "set_object_id");
+	//	lua_pushnumber(L, npc_id);
+	//	lua_pcall(L, 1, 0, 0);
+
+	//	lua_register(L, "API_chat", API_SendMessage);
+	//	lua_register(L, "API_get_x", API_get_x);
+	//	lua_register(L, "API_get_y", API_get_y);
+	//	lua_register(L, "API_run", API_Run);*/
+	//}
 	cout << "NPC Initialization complete.\n";
 }
 
