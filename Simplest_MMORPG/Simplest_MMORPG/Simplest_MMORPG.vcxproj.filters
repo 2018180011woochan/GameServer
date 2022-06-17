@@ -13,37 +13,130 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="소스 파일\99. Default">
+      <UniqueIdentifier>{a411bfe1-864d-484b-80f1-420aeafcf2ff}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="소스 파일\00. MainGame">
+      <UniqueIdentifier>{377f5c2a-eb34-41d2-b146-bd660daf8225}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="소스 파일\98. Manager">
+      <UniqueIdentifier>{f1795dd9-327c-40ca-ae2a-adf0dc5f89c1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="소스 파일\98. Manager\BMPManager">
+      <UniqueIdentifier>{f8103dca-a6ac-45ce-ad00-73524fafccd8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="소스 파일\01. MyBitmap">
+      <UniqueIdentifier>{49c1afc2-d3c5-4a5a-a60a-8e2f2f0eee78}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="헤더 파일\Include">
+      <UniqueIdentifier>{777d5b73-72f7-4bf6-a988-2e8477fad90a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="소스 파일\02. Scene">
+      <UniqueIdentifier>{7f0d497d-8c96-4e60-b44d-a95caf50ca47}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="소스 파일\02. Scene\InGame">
+      <UniqueIdentifier>{b714bfcc-ce2a-4ffc-8f25-795e3895239a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="소스 파일\98. Manager\SceneManager">
+      <UniqueIdentifier>{05a45b7d-8342-410b-951d-7101a159b4a1}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="framework.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
     <ClInclude Include="targetver.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>소스 파일\99. Default</Filter>
+    </ClInclude>
+    <ClInclude Include="framework.h">
+      <Filter>소스 파일\99. Default</Filter>
     </ClInclude>
     <ClInclude Include="Resource.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>소스 파일\99. Default</Filter>
     </ClInclude>
     <ClInclude Include="Simplest_MMORPG.h">
+      <Filter>소스 파일\99. Default</Filter>
+    </ClInclude>
+    <ClInclude Include="stdafx.h">
       <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="CMainGame.h">
+      <Filter>소스 파일\00. MainGame</Filter>
+    </ClInclude>
+    <ClInclude Include="CMyBitMap.h">
+      <Filter>소스 파일\01. MyBitmap</Filter>
+    </ClInclude>
+    <ClInclude Include="CBmpManager.h">
+      <Filter>소스 파일\98. Manager\BMPManager</Filter>
+    </ClInclude>
+    <ClInclude Include="AbstractFactory.h">
+      <Filter>헤더 파일\Include</Filter>
+    </ClInclude>
+    <ClInclude Include="Define.h">
+      <Filter>헤더 파일\Include</Filter>
+    </ClInclude>
+    <ClInclude Include="Enum.h">
+      <Filter>헤더 파일\Include</Filter>
+    </ClInclude>
+    <ClInclude Include="Extern.h">
+      <Filter>헤더 파일\Include</Filter>
+    </ClInclude>
+    <ClInclude Include="Function.h">
+      <Filter>헤더 파일\Include</Filter>
+    </ClInclude>
+    <ClInclude Include="Functor.h">
+      <Filter>헤더 파일\Include</Filter>
+    </ClInclude>
+    <ClInclude Include="Struct.h">
+      <Filter>헤더 파일\Include</Filter>
+    </ClInclude>
+    <ClInclude Include="Include.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="CInGame.h">
+      <Filter>소스 파일\02. Scene\InGame</Filter>
+    </ClInclude>
+    <ClInclude Include="CScene.h">
+      <Filter>소스 파일\02. Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="CSceneManager.h">
+      <Filter>소스 파일\98. Manager\SceneManager</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
+    <Image Include="small.ico">
+      <Filter>소스 파일\99. Default</Filter>
+    </Image>
+    <Image Include="Simplest_MMORPG.ico">
+      <Filter>소스 파일\99. Default</Filter>
+    </Image>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="stdafx.cpp">
+      <Filter>소스 파일\99. Default</Filter>
+    </ClCompile>
+    <ClCompile Include="CMainGame.cpp">
+      <Filter>소스 파일\00. MainGame</Filter>
+    </ClCompile>
+    <ClCompile Include="CMyBitMap.cpp">
+      <Filter>소스 파일\01. MyBitmap</Filter>
+    </ClCompile>
+    <ClCompile Include="CBmpManager.cpp">
+      <Filter>소스 파일\98. Manager\BMPManager</Filter>
+    </ClCompile>
+    <ClCompile Include="CInGame.cpp">
+      <Filter>소스 파일\02. Scene\InGame</Filter>
+    </ClCompile>
+    <ClCompile Include="CScene.cpp">
+      <Filter>소스 파일\02. Scene</Filter>
+    </ClCompile>
+    <ClCompile Include="CSceneManager.cpp">
+      <Filter>소스 파일\98. Manager\SceneManager</Filter>
+    </ClCompile>
     <ClCompile Include="Simplest_MMORPG.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Simplest_MMORPG.rc">
-      <Filter>리소스 파일</Filter>
+      <Filter>소스 파일\99. Default</Filter>
     </ResourceCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <Image Include="small.ico">
-      <Filter>리소스 파일</Filter>
-    </Image>
-    <Image Include="Simplest_MMORPG.ico">
-      <Filter>리소스 파일</Filter>
-    </Image>
   </ItemGroup>
 </Project>
