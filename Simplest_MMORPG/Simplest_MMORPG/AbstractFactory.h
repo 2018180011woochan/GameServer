@@ -3,21 +3,21 @@
 #ifndef __ABSTRACTFACTORY_H__
 #define __ABSTRACTFACTORY_H__
 
-//class CObj;
+class CObj;
 //class CStageMap;
 //class CTile;
 //
 template<typename T>
 class CAbstractFactory
 {
-//public:
-//	static CObj* Create()
-//	{
-//		CObj* pObj = new T;
-//		pObj->Initialize();
-//
-//		return pObj;
-//	}
+public:
+	static CObj* Create()
+	{
+		CObj* pObj = new T;
+		pObj->Initialize();
+
+		return pObj;
+	}
 //
 //	static CObj* Create(float _x, float _y)
 //	{

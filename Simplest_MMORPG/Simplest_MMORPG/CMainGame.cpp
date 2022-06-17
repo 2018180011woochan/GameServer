@@ -2,6 +2,7 @@
 #include "CMainGame.h"
 #include "CBmpManager.h"
 #include "CSceneManager.h"
+#include "CObjManager.h"
 
 CMainGame::CMainGame()
 {
@@ -48,5 +49,6 @@ void CMainGame::Release()
 {
 	CBmpManager::Destroy_Instance();
 	CSceneManager::Destroy_Instance();
+	CObjManager::Destroy_Instance();
 	ReleaseDC(g_hWnd, m_DC);
 }

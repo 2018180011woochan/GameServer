@@ -40,6 +40,18 @@
     <Filter Include="소스 파일\98. Manager\SceneManager">
       <UniqueIdentifier>{05a45b7d-8342-410b-951d-7101a159b4a1}</UniqueIdentifier>
     </Filter>
+    <Filter Include="소스 파일\03. Obj">
+      <UniqueIdentifier>{431e6a10-da54-4ca1-85ce-7240202aa234}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="소스 파일\98. Manager\ObjManager">
+      <UniqueIdentifier>{1f74a5f6-ae17-44a4-bd63-ef2b2b027a56}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="소스 파일\03. Obj\Player">
+      <UniqueIdentifier>{e92b9232-21db-4ef9-b877-12c7bab97ccb}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="소스 파일\98. Manager\KeyManager">
+      <UniqueIdentifier>{7f58215b-b362-4a68-b775-b2606edec537}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="targetver.h">
@@ -99,6 +111,18 @@
     <ClInclude Include="CSceneManager.h">
       <Filter>소스 파일\98. Manager\SceneManager</Filter>
     </ClInclude>
+    <ClInclude Include="CObj.h">
+      <Filter>소스 파일\03. Obj</Filter>
+    </ClInclude>
+    <ClInclude Include="CObjManager.h">
+      <Filter>소스 파일\98. Manager\ObjManager</Filter>
+    </ClInclude>
+    <ClInclude Include="CPlayer.h">
+      <Filter>소스 파일\03. Obj\Player</Filter>
+    </ClInclude>
+    <ClInclude Include="CKeyManager.h">
+      <Filter>소스 파일\98. Manager\KeyManager</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Image Include="small.ico">
@@ -132,6 +156,18 @@
     </ClCompile>
     <ClCompile Include="Simplest_MMORPG.cpp">
       <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="CObj.cpp">
+      <Filter>소스 파일\03. Obj</Filter>
+    </ClCompile>
+    <ClCompile Include="CObjManager.cpp">
+      <Filter>소스 파일\98. Manager\ObjManager</Filter>
+    </ClCompile>
+    <ClCompile Include="CPlayer.cpp">
+      <Filter>소스 파일\03. Obj\Player</Filter>
+    </ClCompile>
+    <ClCompile Include="CKeyManager.cpp">
+      <Filter>소스 파일\98. Manager\KeyManager</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
