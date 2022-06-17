@@ -22,6 +22,8 @@ using namespace std;
 
 //#include "..\..\multi_iocp_server\multi_iocp_server\protocol.h"
 #include "..\..\multi_iocp_server\multi_iocp_server\protocol.h"
+#include "..\..\multi_iocp_server\multi_iocp_server\Enum.h"
+
 sf::TcpSocket socket;
 
 constexpr auto SCREEN_WIDTH = 16;
@@ -34,20 +36,30 @@ constexpr auto WINDOW_HEIGHT = 65 * SCREEN_WIDTH + 10;
 
 int g_left_x;
 int g_top_y;
-int g_myid;
+//int g_myid;
 
 sf::RenderWindow* g_window;
+sf::Font g_font;
+
+char NickName[200] = "dlatl";
 
 class OBJECT {
 private:
 	bool m_showing;
 	sf::Sprite m_sprite;
+	sf::Text m_name;
 public:
+	int id;
 	int m_x, m_y;
+	int level;
+	int exp;
+	int hp, hpmax;
+
 	OBJECT(sf::Texture& t, int x, int y, int x2, int y2) {
 		m_showing = false;
 		m_sprite.setTexture(t);
 		m_sprite.setTextureRect(sf::IntRect(x, y, x2, y2));
+		set_name("NONAME");
 	}
 	OBJECT() {
 		m_showing = false;
@@ -79,10 +91,20 @@ public:
 		float ry = (m_y - g_top_y) * 65.0f + 8;
 		m_sprite.setPosition(rx, ry);
 		g_window->draw(m_sprite);
+
+		m_name.setPosition(rx - 10, ry - 20);
+		g_window->draw(m_name);
 	}
 	bool isShow()
 	{
 		return m_showing;
+	}
+
+	void set_name(const char str[]) {
+		m_name.setFont(g_font);
+		m_name.setString(str);
+		m_name.setFillColor(sf::Color(255, 255, 0));
+		m_name.setStyle(sf::Text::Bold);
 	}
 };
 
@@ -111,8 +133,13 @@ void client_initialize()
 	testMonster->loadFromFile("Texture/Monster/wraith.png");
 	AttackSource->loadFromFile("Texture/UserAttack/fire.png");
 	white_tile = OBJECT{ *board, 500, 220, TILE_WIDTH, TILE_HEIGHT };
+
+	if (false == g_font.loadFromFile("cour.ttf")) {
+		cout << "Font Loading Error!\n";
+		exit(-1);
+	}
 	//black_tile = OBJECT{ *board, 600, 300, TILE_WIDTH, TILE_WIDTH };
-	//red_tile = OBJECT{ *board, 69, 69, TILE_WIDTH, TILE_WIDTH };
+
 	
 	for (int i = 0; i < 4; ++i)
 	{
@@ -145,10 +172,15 @@ void ProcessPacket(char* ptr)
 	case SC_LOGIN_OK:
 	{
 		SC_LOGIN_OK_PACKET * packet = reinterpret_cast<SC_LOGIN_OK_PACKET*>(ptr);
-		g_myid = packet->id;
+		avatar.id = packet->id;
+		avatar.set_name(NickName);
 		avatar.m_x = packet->x;
 		avatar.m_y = packet->y;
-		
+		avatar.hp = packet->hp;
+		avatar.hpmax = packet->hpmax;
+		avatar.level = packet->level;
+		avatar.exp = packet->exp;
+
 		g_left_x = packet->x - 8;
 		g_top_y = packet->y - 8;
 		avatar.show();
@@ -162,10 +194,12 @@ void ProcessPacket(char* ptr)
 
 		if (id < MAX_USER) {
 			players[id].move(my_packet->x, my_packet->y);
+			players[id].set_name(my_packet->name);
 			players[id].show();
 		}
 		else {
 			npcs[id - MAX_USER].move(my_packet->x, my_packet->y);
+			npcs[id - MAX_USER].set_name(my_packet->name);
 			npcs[id - MAX_USER].show();
 		}
 		break;
@@ -174,7 +208,7 @@ void ProcessPacket(char* ptr)
 	{
 		SC_MOVE_OBJECT_PACKET* my_packet = reinterpret_cast<SC_MOVE_OBJECT_PACKET*>(ptr);
 		int other_id = my_packet->id;
-		if (other_id == g_myid) {
+		if (other_id == avatar.id) {
 			avatar.move(my_packet->x, my_packet->y);
 			g_left_x = my_packet->x - 8;
 			g_top_y = my_packet->y - 8;
@@ -192,7 +226,7 @@ void ProcessPacket(char* ptr)
 	{
 		SC_REMOVE_OBJECT_PACKET* my_packet = reinterpret_cast<SC_REMOVE_OBJECT_PACKET*>(ptr);
 		int other_id = my_packet->id;
-		if (other_id == g_myid) {
+		if (other_id == avatar.id) {
 			avatar.hide();
 		}
 		else if (other_id < MAX_USER) {
@@ -305,10 +339,15 @@ int main()
 	sf::Socket::Status status = socket.connect("127.0.0.1", PORT_NUM);
 	socket.setBlocking(false);
 
+	int c_id = 0;
+	//cout << "ID를 입력하세요 ";
+	//cin >> c_id;
+
 	CS_LOGIN_PACKET p;
 	p.size = sizeof(CS_LOGIN_PACKET);
 	p.type = CS_LOGIN;
-	strcpy_s(p.name, "TEMP");
+	p.id = c_id;
+	strcpy_s(p.name, NickName);
 	send_packet(&p);
 
 	if (status != sf::Socket::Done) {
@@ -332,18 +371,18 @@ int main()
 				int direction = -1;
 				switch (event.key.code) {
 				case sf::Keyboard::Left:
-					direction = 2;
+					direction = DIRECTION::DIRECTION_LEFT;
 					break;
 				case sf::Keyboard::Right:
-					direction = 3;
+					direction = DIRECTION::DIRECTION_RIGHT;
 					break;
 				case sf::Keyboard::Up:
-					direction = 0;
+					direction = DIRECTION::DIRECTION_UP;
 					break;
 				case sf::Keyboard::Down:
-					direction = 1;
+					direction = DIRECTION::DIRECTION_DOWN;
 					break;
-				case sf::Keyboard::LControl:	// 스킬 사용
+				case sf::Keyboard::A:	// 스킬 사용
 					PlayerSkill[0].m_x = avatar.m_x;
 					PlayerSkill[0].m_y = avatar.m_y - 1;
 					PlayerSkill[0].show();

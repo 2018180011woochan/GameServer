@@ -144,11 +144,17 @@ public:
 	void send_login_ok_packet()
 	{
 		SC_LOGIN_OK_PACKET p;
-		p.id = _id;
 		p.size = sizeof(SC_LOGIN_OK_PACKET);
 		p.type = SC_LOGIN_OK;
+		///////////////DB에 있다면 DB에서 꺼내올 것들 //////////////////
+		p.id = _id;
 		p.x = x;
 		p.y = y;
+		p.level = 1;
+		p.exp = 0;
+		p.hpmax = p.level * 100;
+		p.hp = p.hpmax;
+		////////////////////////////////////////////////////////////////
 		do_send(&p);
 	}
 	void send_move_packet(int c_id, int client_time);
@@ -263,7 +269,7 @@ void process_packet(int c_id, char* packet)
 		}
 
 		strcpy_s(clients[c_id]._name, p->name);
-		//clients[c_id]._id = p->;
+		clients[c_id]._id = p->id;
 		clients[c_id].send_login_ok_packet();
 		clients[c_id]._s_state = ST_INGAME;
 		clients[c_id]._sl.unlock();
@@ -741,7 +747,9 @@ void initialize_npc()
 	for (int i = 0; i < NUM_NPC; ++i) {
 		int npc_id = i + MAX_USER;
 		clients[npc_id]._s_state = ST_INGAME;
-		sprintf_s(clients[npc_id]._name, "M-%d", npc_id);
+		
+		strcpy_s(clients[npc_id]._name, "Wriath");
+		//sprintf_s(clients[npc_id]._name, "M-%d", npc_id);
 		/*lua_State* L = luaL_newstate();
 		clients[npc_id].L = L;
 

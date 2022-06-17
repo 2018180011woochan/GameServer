@@ -277,6 +277,9 @@
     <ClInclude Include="..\..\multi_iocp_server\multi_iocp_server\protocol.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\multi_iocp_server\multi_iocp_server\Enum.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="include\SFML\Graphics\Glsl.inl">

@@ -28,6 +28,7 @@ struct CS_LOGIN_PACKET {
 	unsigned char size;
 	char	type;
 	char	name[NAME_SIZE];
+	int		id;
 };
 
 struct CS_MOVE_PACKET {
@@ -71,7 +72,7 @@ struct SC_LOGIN_FAIL_PACKET {
 
 struct SC_ADD_OBJECT_PACKET {
 	unsigned char size;
-	char	type;
+	char	type;			
 	int		id;
 	short	x, y;
 	short	race;			// 종족 : 인간, 엘프, 드워프, 오크, 드래곤
