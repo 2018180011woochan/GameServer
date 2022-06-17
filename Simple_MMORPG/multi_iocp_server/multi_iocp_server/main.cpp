@@ -106,6 +106,8 @@ public:
 	short	level;
 	int		exp;
 	int		hp, hpmax;
+	short	attack_type;
+	short	move_type;
 	unordered_set <int> view_list;
 	mutex	vl;
 	lua_State* L;
@@ -128,6 +130,8 @@ public:
 		exp = 0;
 		hpmax = level * 100;
 		hp = hpmax;
+		attack_type = ATTACKTYPE::ATTACKTYPE_END;
+		move_type = MOVETYPE::MOVETYPE_END;
 		_s_state = ST_FREE;
 		_prev_remain = 0;
 		next_move_time = chrono::system_clock::now() + chrono::seconds(1);
@@ -213,6 +217,10 @@ void SESSION::send_add_object(int c_id)
 	p.type = SC_ADD_OBJECT;
 	p.x = clients[c_id].x;
 	p.y = clients[c_id].y;
+	p.race = clients[c_id].race;
+	p.level = clients[c_id].level;
+	p.hp = clients[c_id].hp;
+	p.hpmax = clients[c_id].hpmax;
 	strcpy_s(p.name, clients[c_id]._name);
 	do_send(&p);
 }
@@ -754,35 +762,51 @@ void initialize_npc()
 	for (int i = 0; i < NUM_NPC + MAX_USER; ++i)
 		clients[i]._id = i;
 	cout << "NPC initialize Begin.\n";
-	for (int i = MAX_USER; i < MAX_USER + 60000 ; ++ i)
+	for (int i = MAX_USER; i < MAX_USER + 50000 ; ++ i)
 	{
 		// Skeleton
 		int npc_id = i;
 		clients[npc_id]._s_state = ST_INGAME;
+		clients[npc_id].race = RACE::RACE_SKELETON;
+		clients[npc_id].level = 1;
+		clients[npc_id].hpmax = clients[npc_id].level * 100;
+		clients[npc_id].hp = clients[npc_id].hpmax;
 
 		strcpy_s(clients[npc_id]._name, "Skeleton");
 	}
-	for (int i = MAX_USER + 60000; i < MAX_USER + 140000; ++i)
+	for (int i = MAX_USER + 50000; i < MAX_USER + 100000; ++i)
 	{
 		// Wraith
 		int npc_id = i;
 		clients[npc_id]._s_state = ST_INGAME;
+		clients[npc_id].race = RACE::RACE_WRIATH;
+		clients[npc_id].level = 2;
+		clients[npc_id].hpmax = clients[npc_id].level * 100;
+		clients[npc_id].hp = clients[npc_id].hpmax;
 
 		strcpy_s(clients[npc_id]._name, "Wriath");
 	}
-	for (int i = MAX_USER + 140000; i < MAX_USER + 190000; ++i)
+	for (int i = MAX_USER + 100000; i < MAX_USER + 150000; ++i)
 	{
 		// Devil
 		int npc_id = i;
 		clients[npc_id]._s_state = ST_INGAME;
+		clients[npc_id].race = RACE::RACE_DEVIL;
+		clients[npc_id].level = 3;
+		clients[npc_id].hpmax = clients[npc_id].level * 100;
+		clients[npc_id].hp = clients[npc_id].hpmax;
 
 		strcpy_s(clients[npc_id]._name, "Devil");
 	}
-	for (int i = MAX_USER + 190000; i < NUM_NPC; ++i)
+	for (int i = MAX_USER + 150000; i < NUM_NPC; ++i)
 	{
 		// Diablo
 		int npc_id = i;
 		clients[npc_id]._s_state = ST_INGAME;
+		clients[npc_id].race = RACE::RACE_DIABLO;
+		clients[npc_id].level = 4;
+		clients[npc_id].hpmax = clients[npc_id].level * 100;
+		clients[npc_id].hp = clients[npc_id].hpmax;
 
 		strcpy_s(clients[npc_id]._name, "Diablo");
 	}

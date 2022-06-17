@@ -41,7 +41,7 @@ int g_top_y;
 sf::RenderWindow* g_window;
 sf::Font g_font;
 
-char NickName[200] = "dlatl";
+char NickName[200] = "ALEX Jr";
 
 class OBJECT {
 private:
@@ -63,6 +63,12 @@ public:
 	}
 	OBJECT() {
 		m_showing = false;
+	}
+	void set_info(int _level, int _hp, int _hpmax)
+	{
+		level = _level;
+		hp = _hp;
+		hpmax = _hpmax;
 	}
 	void show()
 	{
@@ -119,18 +125,27 @@ OBJECT white_tile;
 
 sf::Texture* board;
 sf::Texture* pieces;
-sf::Texture* testMonster;
+sf::Texture* skeleton;
+sf::Texture* wraith;
+sf::Texture* devil;
+sf::Texture* diablo;
 sf::Texture* AttackSource;
 
 void client_initialize()
 {
 	board = new sf::Texture;
 	pieces = new sf::Texture;
-	testMonster = new sf::Texture;
+	skeleton = new sf::Texture;
+	wraith = new sf::Texture;
+	devil = new sf::Texture;
+	diablo = new sf::Texture;
 	AttackSource = new sf::Texture;
 	board->loadFromFile("Texture/Map/0.png");
 	pieces->loadFromFile("Texture/User/player.png");
-	testMonster->loadFromFile("Texture/Monster/wraith.png");
+	skeleton->loadFromFile("Texture/Monster/Skeleton.png");
+	wraith->loadFromFile("Texture/Monster/wraith.png");
+	devil->loadFromFile("Texture/Monster/Devil.png");
+	diablo->loadFromFile("Texture/Monster/Diablo.png");
 	AttackSource->loadFromFile("Texture/UserAttack/fire.png");
 	white_tile = OBJECT{ *board, 500, 220, TILE_WIDTH, TILE_HEIGHT };
 
@@ -144,7 +159,6 @@ void client_initialize()
 	for (int i = 0; i < 4; ++i)
 	{
 		PlayerSkill.push_back(OBJECT{ *AttackSource, 0, 120, 60, 60 });
-		//PlayerSkill[i].push_back(OBJECT{ *AttackSource, 0, 120, 60, 60 });
 	}
 
 	avatar = OBJECT{ *pieces, 65, 50, 200, 200 };
@@ -153,15 +167,28 @@ void client_initialize()
 		pl = OBJECT{ *pieces, 50, 50, 200, 200 };
 	}
 	for (auto& npc : npcs) {
-		npc = OBJECT{ *testMonster, 0, 0, 138, 149 };
+		npc = OBJECT{ *skeleton, 0, 0, 38, 73 };
 	}
+	//for (auto& npc : npcs) {	
+	//	if (npc.id < 60000)		// skeleton
+	//		npc = OBJECT{ *skeleton, 0, 0, 38, 73 };
+	//	if (60000 <= npc.id < 110000)	// wraith
+	//		npc = OBJECT{ *wraith, 0, 0, 138, 149 };
+	//	if (110000 <= npc.id < 160000)	// devil
+	//		npc = OBJECT{ *devil, 0, 0, 161, 133 };
+	//	if (160000 <= npc.id < 200000)	// diablo
+	//		npc = OBJECT{ *diablo, 0, 0, 135, 158 };
+	//}
 }
 
 void client_finish()
 {
 	delete board;
 	delete pieces;
-	delete testMonster;
+	delete skeleton;
+	delete wraith;
+	delete devil;
+	delete diablo;
 }
 
 void ProcessPacket(char* ptr)
@@ -200,6 +227,17 @@ void ProcessPacket(char* ptr)
 		else {
 			npcs[id - MAX_USER].move(my_packet->x, my_packet->y);
 			npcs[id - MAX_USER].set_name(my_packet->name);
+			npcs[id - MAX_USER].set_info(my_packet->level, my_packet->hp, my_packet->hpmax);
+
+			//if (my_packet->id - MAX_USER < 60000)		// skeleton
+			//	npcs[id - MAX_USER] = OBJECT{ *skeleton, 0, 0, 38, 73 };
+			//if (60000 <= my_packet->id - MAX_USER < 110000)	// wraith
+			//	npcs[id - MAX_USER] = OBJECT{ *wraith, 0, 0, 138, 149 };
+			//if (110000 <= my_packet->id - MAX_USER < 160000)	// devil
+			//	npcs[id - MAX_USER] = OBJECT{ *devil, 0, 0, 161, 133 };
+			//if (160000 <= my_packet->id - MAX_USER < 200000)	// diablo
+			//	npcs[id - MAX_USER] = OBJECT{ *diablo, 0, 0, 135, 158 };
+
 			npcs[id - MAX_USER].show();
 		}
 		break;
