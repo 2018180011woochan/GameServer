@@ -79,11 +79,18 @@ public:
 		m_sprite.setPosition(rx, ry);
 		g_window->draw(m_sprite);
 	}
+	void draw(int x, int y) {
+		if (false == m_showing) return;
+
+		m_sprite.setPosition(x, y);
+		g_window->draw(m_sprite);
+	}
 };
 
 OBJECT avatar;
 OBJECT players[MAX_USER];
 OBJECT npcs[NUM_NPC];
+OBJECT PlayerSkill;
 
 OBJECT white_tile;
 //OBJECT black_tile;
@@ -92,27 +99,30 @@ OBJECT white_tile;
 sf::Texture* board;
 sf::Texture* pieces;
 sf::Texture* testMonster;
+sf::Texture* AttackSource;
 
 void client_initialize()
 {
 	board = new sf::Texture;
 	pieces = new sf::Texture;
 	testMonster = new sf::Texture;
+	AttackSource = new sf::Texture;
 	board->loadFromFile("Texture/Map/0.png");
-	pieces->loadFromFile("Texture/Player/stand_8/0.png");
-	testMonster->loadFromFile("Texture/MonsterSample/wraith.png");
+	pieces->loadFromFile("Texture/User/player.png");
+	testMonster->loadFromFile("Texture/Monster/wraith.png");
+	AttackSource->loadFromFile("Texture/UserAttack/fire.png");
 	white_tile = OBJECT{ *board, 500, 220, TILE_WIDTH, TILE_HEIGHT };
 	//black_tile = OBJECT{ *board, 600, 300, TILE_WIDTH, TILE_WIDTH };
 	//red_tile = OBJECT{ *board, 69, 69, TILE_WIDTH, TILE_WIDTH };
+	PlayerSkill = OBJECT{ *AttackSource, 0, 0, 66, 167 };
+
 	avatar = OBJECT{ *pieces, 50, 50, 200, 200 };
 	avatar.move(4, 4);
 	for (auto& pl : players) {
-		//pl = OBJECT{ *pieces, 64, 0, 64, 64 };
 		pl = OBJECT{ *pieces, 50, 50, 200, 200 };
 	}
 	for (auto& npc : npcs) {
 		npc = OBJECT{ *testMonster, 0, 0, 138, 149 };
-		//npc = OBJECT{ *pieces, 50, 50, 200, 200 };
 	}
 }
 
@@ -255,6 +265,7 @@ void client_main()
 			}*/
 		}
 	avatar.draw();
+	PlayerSkill.draw();
 	for (auto& pl : players) pl.draw();
 	for (auto& pl : npcs) pl.draw();
 }
@@ -287,7 +298,7 @@ int main()
 
 	sf::RenderWindow window(sf::VideoMode(WINDOW_WIDTH, WINDOW_HEIGHT), "Simplest_MMORPG");
 	g_window = &window;
-
+	int a = 10;
 	while (window.isOpen())
 	{
 		sf::Event event;
@@ -310,6 +321,12 @@ int main()
 				case sf::Keyboard::Down:
 					direction = 1;
 					break;
+				case sf::Keyboard::LControl:
+					PlayerSkill.m_x = avatar.m_x;
+					PlayerSkill.m_y = avatar.m_y;
+					PlayerSkill.show();
+					//PlayerSkill.draw(PlayerSkill.m_x, PlayerSkill.m_y);
+					break; // 스킬 사용
 				case sf::Keyboard::Escape:
 					window.close();
 					break;

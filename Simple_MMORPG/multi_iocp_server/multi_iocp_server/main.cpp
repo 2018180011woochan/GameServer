@@ -466,11 +466,6 @@ void move_npc(int npc_id)
 	case 3: if (x < W_WIDTH - 1) x++; break;
 	}
 
-	//volatile int i = 0;
-	//volatile int sum = 0;
-	//for (int i = 0; i < 10000; ++i)
-	//	sum += i;
-
 	clients[npc_id].x = x;
 	clients[npc_id].y = y;
 
