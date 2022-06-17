@@ -20,7 +20,7 @@ using namespace std;
 #pragma comment (lib, "ws2_32.lib")
 
 //#include "..\..\multi_iocp_server\multi_iocp_server\protocol.h"
-#include "..\..\Server\Server\protocol.h"
+#include "..\..\multi_iocp_server\multi_iocp_server\protocol.h"
 sf::TcpSocket socket;
 
 constexpr auto SCREEN_WIDTH = 16;
@@ -83,6 +83,7 @@ public:
 
 OBJECT avatar;
 OBJECT players[MAX_USER];
+OBJECT npcs[NUM_NPC];
 
 OBJECT white_tile;
 //OBJECT black_tile;
@@ -90,20 +91,28 @@ OBJECT white_tile;
 
 sf::Texture* board;
 sf::Texture* pieces;
+sf::Texture* testMonster;
 
 void client_initialize()
 {
 	board = new sf::Texture;
 	pieces = new sf::Texture;
+	testMonster = new sf::Texture;
 	board->loadFromFile("Texture/Map/0.png");
 	pieces->loadFromFile("Texture/Player/stand_8/0.png");
+	testMonster->loadFromFile("Texture/MonsterSample/wraith.png");
 	white_tile = OBJECT{ *board, 500, 220, TILE_WIDTH, TILE_HEIGHT };
 	//black_tile = OBJECT{ *board, 600, 300, TILE_WIDTH, TILE_WIDTH };
 	//red_tile = OBJECT{ *board, 69, 69, TILE_WIDTH, TILE_WIDTH };
-	avatar = OBJECT{ *pieces, 69, 50, 200, 200 };
+	avatar = OBJECT{ *pieces, 50, 50, 200, 200 };
 	avatar.move(4, 4);
 	for (auto& pl : players) {
-		pl = OBJECT{ *pieces, 64, 0, 64, 64 };
+		//pl = OBJECT{ *pieces, 64, 0, 64, 64 };
+		pl = OBJECT{ *pieces, 50, 50, 200, 200 };
+	}
+	for (auto& npc : npcs) {
+		npc = OBJECT{ *testMonster, 0, 0, 138, 149 };
+		//npc = OBJECT{ *pieces, 50, 50, 200, 200 };
 	}
 }
 
@@ -111,6 +120,7 @@ void client_finish()
 {
 	delete board;
 	delete pieces;
+	delete testMonster;
 }
 
 void ProcessPacket(char* ptr)
@@ -141,9 +151,8 @@ void ProcessPacket(char* ptr)
 			players[id].show();
 		}
 		else {
-			//npc[id - NPC_START].x = my_packet->x;
-			//npc[id - NPC_START].y = my_packet->y;
-			//npc[id - NPC_START].attr |= BOB_ATTR_VISIBLE;
+			npcs[id - MAX_USER].move(my_packet->x, my_packet->y);
+			npcs[id - MAX_USER].show();
 		}
 		break;
 	}
@@ -160,8 +169,7 @@ void ProcessPacket(char* ptr)
 			players[other_id].move(my_packet->x, my_packet->y);
 		}
 		else {
-			//npc[other_id - NPC_START].x = my_packet->x;
-			//npc[other_id - NPC_START].y = my_packet->y;
+			npcs[other_id - MAX_USER].move(my_packet->x, my_packet->y);
 		}
 		break;
 	}
@@ -177,7 +185,7 @@ void ProcessPacket(char* ptr)
 			players[other_id].hide();
 		}
 		else {
-			//		npc[other_id - NPC_START].attr &= ~BOB_ATTR_VISIBLE;
+			npcs[other_id - MAX_USER].hide();
 		}
 		break;
 	}
@@ -248,6 +256,7 @@ void client_main()
 		}
 	avatar.draw();
 	for (auto& pl : players) pl.draw();
+	for (auto& pl : npcs) pl.draw();
 }
 
 void send_packet(void *packet)

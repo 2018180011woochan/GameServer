@@ -13,6 +13,9 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="헤더 파일\include">
+      <UniqueIdentifier>{a4f1242b-a81c-40bd-ad88-0998bc904d3f}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -20,8 +23,33 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="include\lauxlib.h">
+      <Filter>헤더 파일\include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\lua.h">
+      <Filter>헤더 파일\include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\lua.hpp">
+      <Filter>헤더 파일\include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\luaconf.h">
+      <Filter>헤더 파일\include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\lualib.h">
+      <Filter>헤더 파일\include</Filter>
+    </ClInclude>
     <ClInclude Include="protocol.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Library Include="lua54.lib">
+      <Filter>리소스 파일</Filter>
+    </Library>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="hello.lua">
+      <Filter>리소스 파일</Filter>
+    </None>
   </ItemGroup>
 </Project>
