@@ -17,10 +17,10 @@ CPlayer::~CPlayer()
 
 void CPlayer::Initialize()
 {
-	CBmpManager::Get_Instance()->Insert_Bmp(L"../Image/Player.bmp", L"Player");
+	CBmpManager::Get_Instance()->Insert_Bmp(L"../Image/wait.bmp", L"Player");
 
-	m_tInfo.fX = MAPSTARTX + (TILECX >> 1);
-	m_tInfo.fY = MAPSTARTY + (TILECY >> 1);
+	m_tInfo.fX = 50;
+	m_tInfo.fY = 50;
 	m_tInfo.iCX = 25;
 	m_tInfo.iCY = 25;
 

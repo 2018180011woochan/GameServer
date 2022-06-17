@@ -20,3 +20,5 @@
 using namespace std;
 
 #include "Include.h"
+
+#include "../../Simplest_MMORPG_Server/Simplest_MMORPG_Server/protocol.h"

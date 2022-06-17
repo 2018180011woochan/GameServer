@@ -123,6 +123,9 @@
     <ClInclude Include="CKeyManager.h">
       <Filter>소스 파일\98. Manager\KeyManager</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\Simplest_MMORPG_Server\Simplest_MMORPG_Server\protocol.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Image Include="small.ico">
