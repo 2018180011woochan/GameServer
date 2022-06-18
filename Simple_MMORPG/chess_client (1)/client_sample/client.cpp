@@ -167,7 +167,7 @@ void client_initialize()
 		pl = OBJECT{ *pieces, 50, 50, 200, 200 };
 	}
 	for (auto& npc : npcs) {
-		npc = OBJECT{ *skeleton, 0, 0, 38, 73 };
+		npc = OBJECT{ *pieces, 50, 50, 200, 200 };
 	}
 	//for (auto& npc : npcs) {	
 	//	if (npc.id < 60000)		// skeleton
@@ -225,10 +225,26 @@ void ProcessPacket(char* ptr)
 			players[id].show();
 		}
 		else {
+			switch (my_packet->race)
+			{
+			case RACE_SKELETON:
+				npcs[id - MAX_USER] = OBJECT{ *skeleton, 0, 0, 38, 73 };
+				break;
+			case RACE_WRIATH:
+				npcs[id - MAX_USER] = OBJECT{ *wraith, 0, 0, 138, 149 };
+				break;
+			case RACE_DEVIL:
+				npcs[id - MAX_USER] = OBJECT{ *devil, 0, 0, 161, 133 };
+				break;
+			case RACE_DIABLO:
+				npcs[id - MAX_USER] = OBJECT{ *diablo, 0, 0, 135, 158 };
+				break;
+			}
 			npcs[id - MAX_USER].move(my_packet->x, my_packet->y);
 			npcs[id - MAX_USER].set_name(my_packet->name);
 			npcs[id - MAX_USER].set_info(my_packet->level, my_packet->hp, my_packet->hpmax);
 
+			
 			//if (my_packet->id - MAX_USER < 60000)		// skeleton
 			//	npcs[id - MAX_USER] = OBJECT{ *skeleton, 0, 0, 38, 73 };
 			//if (60000 <= my_packet->id - MAX_USER < 110000)	// wraith
