@@ -52,7 +52,7 @@ public:
 	int id;
 	int m_x, m_y;
 	int level;
-	int exp;
+	int exp, maxexp;
 	int hp, hpmax;
 
 	OBJECT(sf::Texture& t, int x, int y, int x2, int y2) {

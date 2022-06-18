@@ -104,7 +104,7 @@ public:
 	char	_name[NAME_SIZE];
 	short	race;
 	short	level;
-	int		exp;
+	int		exp, maxexp;
 	int		hp, hpmax;
 	short	attack_type;
 	short	move_type;
@@ -128,6 +128,7 @@ public:
 		race = RACE::RACE_END;
 		level = 1;
 		exp = 0;
+		maxexp = level * 100;
 		hpmax = level * 100;
 		hp = hpmax;
 		attack_type = ATTACKTYPE::ATTACKTYPE_END;
@@ -400,24 +401,84 @@ void process_packet(int c_id, char* packet)
 			if (clients[c_id].x == clients[i].x) {
 				if (abs(clients[c_id].y - clients[i].y) == 1) {	// 상하
 					clients[i].hp -= clients[c_id].level * 50;
+					cout << clients[c_id]._name << "가 " << clients[i]._name << "["
+						<< clients[i]._id << "] " << "를 공격하여 " << clients[c_id].level * 50
+						<< "의 데미지를 입혔습니다\n";
 					if (clients[i].hp <= 0) {					// 처치한다면
 						SC_REMOVE_OBJECT_PACKET p;
 						p.size = sizeof(SC_REMOVE_OBJECT_PACKET);
 						p.type = SC_REMOVE_OBJECT;
 						p.id = i;
 						clients[c_id].do_send(&p);				// 나중에는 접속한 모든 플레이어한테 보내야할듯
+
+						SC_STAT_CHANGE_PACKET scp;
+						scp.size = sizeof(SC_STAT_CHANGE_PACKET);
+						scp.type = SC_STAT_CHANGE;
+						int rewardEXP = int(clients[i].level * clients[i].level) * 2;
+
+						clients[c_id].exp += rewardEXP;
+						if (clients[c_id].exp > clients[c_id].maxexp)		// 렙업
+						{
+							clients[c_id].level += 1;
+							clients[c_id].hpmax = clients[c_id].level * 100;
+							clients[c_id].hp = clients[c_id].hpmax;
+							clients[c_id].maxexp = clients[c_id].level * 100;
+							clients[c_id].exp = 0;
+
+							cout << clients[c_id]._name << "의 레벨이 " << clients[i].level
+								<< "가 되었습니다\n";
+						}
+						scp.level = clients[c_id].level;
+						scp.hp = clients[c_id].hp;
+						scp.hpmax = clients[c_id].hpmax;
+						scp.exp = clients[c_id].exp;
+
+						clients[c_id].do_send(&scp);
+						cout << clients[c_id]._name << "가 " << clients[i]._name << "["
+							<< clients[i]._id << "] " << "를 무찔러 " << rewardEXP
+							<< "의 경험치를 얻었습니다\n";
 					}
 				}
 			}
 			if (clients[c_id].y == clients[i].y) {
 				if (abs(clients[c_id].x - clients[i].x) == 1) {	// 좌우
 					clients[i].hp -= clients[c_id].level * 50;
+					cout << clients[c_id]._name << "가 " << clients[i]._name << "["
+						<< clients[i]._id << "] " << "를 공격하여 " << clients[c_id].level * 50
+						<< "의 데미지를 입혔습니다\n";
 					if (clients[i].hp <= 0) {					// 처치한다면
 						SC_REMOVE_OBJECT_PACKET p;
 						p.size = sizeof(SC_REMOVE_OBJECT_PACKET);
 						p.type = SC_REMOVE_OBJECT;
 						p.id = i;
 						clients[c_id].do_send(&p);				// 나중에는 접속한 모든 플레이어한테 보내야할듯
+
+						SC_STAT_CHANGE_PACKET scp;
+						scp.size = sizeof(SC_STAT_CHANGE_PACKET);
+						scp.type = SC_STAT_CHANGE;
+						int rewardEXP = int(clients[i].level * clients[i].level) * 2;
+
+						clients[c_id].exp += rewardEXP;
+						if (clients[c_id].exp > clients[c_id].maxexp)		// 렙업
+						{
+							clients[c_id].level += 1;
+							clients[c_id].hpmax = clients[c_id].level * 100;
+							clients[c_id].hp = clients[c_id].hpmax;
+							clients[c_id].maxexp = clients[c_id].level * 100;
+							clients[c_id].exp = 0;
+
+							cout << clients[c_id]._name << "의 레벨이 " << clients[i].level
+								<< "가 되었습니다\n";
+						}
+						scp.level = clients[c_id].level;
+						scp.hp = clients[c_id].hp;
+						scp.hpmax = clients[c_id].hpmax;
+						scp.exp = clients[c_id].exp;
+
+						clients[c_id].do_send(&scp);
+						cout << clients[c_id]._name << "가 " << clients[i]._name << "["
+							<< clients[i]._id << "] " << "를 무찔러 " << rewardEXP
+							<< "의 경험치를 얻었습니다\n";
 					}
 				}
 			}
