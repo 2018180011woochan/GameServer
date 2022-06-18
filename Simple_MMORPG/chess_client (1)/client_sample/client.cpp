@@ -47,7 +47,7 @@ class OBJECT {
 private:
 	bool m_showing;
 	sf::Sprite m_sprite;
-	sf::Sprite m_HPBar;
+	
 	sf::Text m_name;
 public:
 	int id;
@@ -55,6 +55,7 @@ public:
 	int level;
 	int exp, maxexp;
 	int hp, hpmax;
+	sf::Sprite m_HPBar;
 
 	OBJECT(sf::Texture& t, int x, int y, int x2, int y2) {
 		m_showing = false;
@@ -90,11 +91,14 @@ public:
 
 	void a_move(int x, int y) {
 		m_sprite.setPosition((float)x, (float)y);
-		m_HPBar.setPosition((float)x, (float)y);
+		//int temp = 10;
+		//m_HPBar.setTextureRect(sf::IntRect(0, 0, 20, 10));
+		//m_HPBar.setPosition((float)x, (float)y);
 	}
 
 	void a_draw() {
 		g_window->draw(m_sprite);
+		//g_window->draw(m_HPBar);
 	}
 
 	void move(int x, int y) {
@@ -137,13 +141,10 @@ public:
 OBJECT avatar;
 OBJECT players[MAX_USER];
 OBJECT npcs[NUM_NPC];
-//OBJECT playerHPbar[MAX_USER];
 
 vector<OBJECT> PlayerSkill;
 
 OBJECT white_tile;
-//OBJECT black_tile;
-//OBJECT red_tile;
 
 sf::Texture* board;
 sf::Texture* pieces;
@@ -193,9 +194,6 @@ void client_initialize()
 	for (auto& pl : players) {
 		pl = OBJECT{ *pieces, 50, 50, 200, 200, *HPBar, 0, 0, 89, 10 };
 	}
-	/*for (auto& plhpbar : playerHPbar) {
-		plhpbar = OBJECT{ *HPBar, 0, 0, 89, 10 };
-	}*/
 	for (auto& npc : npcs) {
 		npc = OBJECT{ *skeleton, 0, 0, 38, 73 };
 	}
@@ -228,10 +226,6 @@ void ProcessPacket(char* ptr)
 		avatar.hpmax = packet->hpmax;
 		avatar.level = packet->level;
 		avatar.exp = packet->exp;
-
-		//playerHPbar[avatar.id].m_x = avatar.m_x;
-		//playerHPbar[avatar.id].m_y = avatar.m_y;
-		//playerHPbar[avatar.id].show();
 
 		g_left_x = packet->x - 8;
 		g_top_y = packet->y - 8;
@@ -287,6 +281,27 @@ void ProcessPacket(char* ptr)
 		}
 		else {
 			npcs[other_id - MAX_USER].move(my_packet->x, my_packet->y);
+		}
+		break;
+	}
+
+	case SC_STAT_CHANGE:
+	{
+		SC_STAT_CHANGE_PACKET* my_packet = reinterpret_cast<SC_STAT_CHANGE_PACKET*>(ptr);
+		if (my_packet->id == avatar.id) {
+			avatar.level = my_packet->level;
+			avatar.hp = my_packet->hp;
+			avatar.hpmax = my_packet->hpmax;
+			
+			avatar.hp -= 10;
+			int curhp = 89 * avatar.hp / avatar.hpmax;
+
+			avatar.m_HPBar.setTextureRect(sf::IntRect(0, 0, curhp, 10));
+		}
+		else {
+			players[my_packet->id].level = my_packet->level;
+			players[my_packet->id].hp = my_packet->hp;
+			players[my_packet->id].hpmax = my_packet->hpmax;
 		}
 		break;
 	}
@@ -393,7 +408,6 @@ void client_main()
 	}
 
 	for (auto& pl : players) pl.draw();
-	//for (auto& plhpbar : playerHPbar) plhpbar.idraw();
 	for (auto& pl : npcs) pl.draw();
 }
 
@@ -411,8 +425,8 @@ int main()
 	socket.setBlocking(false);
 
 	int c_id = 0;
-	//cout << "ID를 입력하세요 ";
-	//cin >> c_id;
+	cout << "ID를 입력하세요 ";
+	cin >> c_id;
 
 	CS_LOGIN_PACKET p;
 	p.size = sizeof(CS_LOGIN_PACKET);

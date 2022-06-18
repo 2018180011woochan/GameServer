@@ -418,6 +418,7 @@ void process_packet(int c_id, char* packet)
 						SC_STAT_CHANGE_PACKET scp;
 						scp.size = sizeof(SC_STAT_CHANGE_PACKET);
 						scp.type = SC_STAT_CHANGE;
+						scp.id = c_id;
 						int rewardEXP = int(clients[i].level * clients[i].level) * 2;
 
 						clients[c_id].exp += rewardEXP;
@@ -461,6 +462,7 @@ void process_packet(int c_id, char* packet)
 						SC_STAT_CHANGE_PACKET scp;
 						scp.size = sizeof(SC_STAT_CHANGE_PACKET);
 						scp.type = SC_STAT_CHANGE;
+						scp.id = c_id;
 						int rewardEXP = int(clients[i].level * clients[i].level) * 2;
 
 						clients[c_id].exp += rewardEXP;
