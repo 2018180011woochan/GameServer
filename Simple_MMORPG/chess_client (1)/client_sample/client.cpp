@@ -195,7 +195,7 @@ void client_initialize()
 		pl = OBJECT{ *pieces, 50, 50, 200, 200, *HPBar, 0, 0, 89, 10 };
 	}
 	for (auto& npc : npcs) {
-		npc = OBJECT{ *skeleton, 0, 0, 38, 73 };
+		npc = OBJECT{ *skeleton, 0, 0, 38, 73, *HPBar, 0, 0, 89, 10 };
 	}
 }
 
@@ -247,16 +247,16 @@ void ProcessPacket(char* ptr)
 			switch (my_packet->race)
 			{
 			case RACE_SKELETON:
-				npcs[id - MAX_USER] = OBJECT{ *skeleton, 0, 0, 38, 73 };
+				npcs[id - MAX_USER] = OBJECT{ *skeleton, 0, 0, 38, 73 , *HPBar, 0, 0, 89, 10 };
 				break;
 			case RACE_WRIATH:
-				npcs[id - MAX_USER] = OBJECT{ *wraith, 0, 0, 138, 149 };
+				npcs[id - MAX_USER] = OBJECT{ *wraith, 0, 0, 138, 149 , *HPBar, 0, 0, 89, 10 };
 				break;
 			case RACE_DEVIL:
-				npcs[id - MAX_USER] = OBJECT{ *devil, 0, 0, 161, 133 };
+				npcs[id - MAX_USER] = OBJECT{ *devil, 0, 0, 161, 133 , *HPBar, 0, 0, 89, 10 };
 				break;
 			case RACE_DIABLO:
-				npcs[id - MAX_USER] = OBJECT{ *diablo, 0, 0, 135, 158 };
+				npcs[id - MAX_USER] = OBJECT{ *diablo, 0, 0, 135, 158 , *HPBar, 0, 0, 89, 10 };
 				break;
 			}
 			npcs[id - MAX_USER].move(my_packet->x, my_packet->y);
@@ -297,10 +297,24 @@ void ProcessPacket(char* ptr)
 
 			avatar.m_HPBar.setTextureRect(sf::IntRect(0, 0, curhp, 10));
 		}
-		else {
+		else if (my_packet->id < MAX_USER) {
 			players[my_packet->id].level = my_packet->level;
 			players[my_packet->id].hp = my_packet->hp;
 			players[my_packet->id].hpmax = my_packet->hpmax;
+
+			players[my_packet->id].level = my_packet->level;
+			players[my_packet->id].hp = my_packet->hp;
+			players[my_packet->id].hpmax = my_packet->hpmax;
+			int curhp = 89 * players[my_packet->id].hp / players[my_packet->id].hpmax;
+
+			players[my_packet->id].m_HPBar.setTextureRect(sf::IntRect(0, 0, curhp, 10));
+		}
+		else {
+			npcs[my_packet->id - MAX_USER].level = my_packet->level;
+			npcs[my_packet->id - MAX_USER].hp = my_packet->hp;
+			npcs[my_packet->id - MAX_USER].hpmax = my_packet->hpmax;
+			int curhp = 89 * npcs[my_packet->id - MAX_USER].hp / npcs[my_packet->id - MAX_USER].hpmax;
+			npcs[my_packet->id - MAX_USER].m_HPBar.setTextureRect(sf::IntRect(0, 0, curhp, 10));
 		}
 		break;
 	}

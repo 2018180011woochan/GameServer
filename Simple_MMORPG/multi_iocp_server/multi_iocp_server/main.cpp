@@ -405,6 +405,16 @@ void process_packet(int c_id, char* packet)
 			if (clients[c_id].x == clients[i].x) {
 				if (abs(clients[c_id].y - clients[i].y) == 1) {	// 상하
 					clients[i].hp -= clients[c_id].level * 50;
+					SC_STAT_CHANGE_PACKET Monsterscp;
+					Monsterscp.size = sizeof(SC_STAT_CHANGE_PACKET);
+					Monsterscp.type = SC_STAT_CHANGE;
+					Monsterscp.hp = clients[i].hp;
+					Monsterscp.hpmax = clients[i].hpmax;
+					Monsterscp.id = i;
+					Monsterscp.level = clients[i].level;
+
+					clients[c_id].do_send(&Monsterscp);
+
 					cout << clients[c_id]._name << "가 " << clients[i]._name << "["
 						<< clients[i]._id << "] " << "를 공격하여 " << clients[c_id].level * 50
 						<< "의 데미지를 입혔습니다\n";
@@ -449,6 +459,16 @@ void process_packet(int c_id, char* packet)
 			if (clients[c_id].y == clients[i].y) {
 				if (abs(clients[c_id].x - clients[i].x) == 1) {	// 좌우
 					clients[i].hp -= clients[c_id].level * 50;
+					SC_STAT_CHANGE_PACKET Monsterscp;
+					Monsterscp.size = sizeof(SC_STAT_CHANGE_PACKET);
+					Monsterscp.type = SC_STAT_CHANGE;
+					Monsterscp.hp = clients[i].hp;
+					Monsterscp.hpmax = clients[i].hpmax;
+					Monsterscp.id = i;
+					Monsterscp.level = clients[i].level;
+
+					clients[c_id].do_send(&Monsterscp);
+
 					cout << clients[c_id]._name << "가 " << clients[i]._name << "["
 						<< clients[i]._id << "] " << "를 공격하여 " << clients[c_id].level * 50
 						<< "의 데미지를 입혔습니다\n";
@@ -711,8 +731,8 @@ void do_ai_ver_1()
 		for (int i = 0; i < NUM_NPC; ++i) {
 			int npc_id = i + MAX_USER;
 			if (start_t > clients[npc_id].next_move_time) {
-				//move_npc(npc_id);
-				AttackNPC(npc_id);
+				move_npc(npc_id);
+				//AttackNPC(npc_id);
 				clients[npc_id].next_move_time = start_t + chrono::seconds(1);
 			}
 		}
