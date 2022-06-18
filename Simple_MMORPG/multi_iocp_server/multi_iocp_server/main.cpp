@@ -114,6 +114,7 @@ public:
 	mutex	vm_l;
 	mutex	run_l;
 	bool isNpcRun;
+	bool isNpcDead;
 
 	chrono::system_clock::time_point next_move_time;
 	int		_prev_remain;
@@ -137,6 +138,7 @@ public:
 		_prev_remain = 0;
 		next_move_time = chrono::system_clock::now() + chrono::seconds(1);
 		isNpcRun = false;
+		isNpcDead = false;
 	}
 
 	~SESSION() {}
@@ -398,6 +400,8 @@ void process_packet(int c_id, char* packet)
 	}
 	case CS_ATTACK: {
 		for (int i = MAX_USER; i < NUM_NPC; ++i) {
+			if (clients[i].isNpcDead)
+				continue;
 			if (clients[c_id].x == clients[i].x) {
 				if (abs(clients[c_id].y - clients[i].y) == 1) {	// 상하
 					clients[i].hp -= clients[c_id].level * 50;
@@ -425,7 +429,7 @@ void process_packet(int c_id, char* packet)
 							clients[c_id].maxexp = clients[c_id].level * 100;
 							clients[c_id].exp = 0;
 
-							cout << clients[c_id]._name << "의 레벨이 " << clients[i].level
+							cout << clients[c_id]._name << "의 레벨이 " << clients[c_id].level
 								<< "가 되었습니다\n";
 						}
 						scp.level = clients[c_id].level;
@@ -437,6 +441,7 @@ void process_packet(int c_id, char* packet)
 						cout << clients[c_id]._name << "가 " << clients[i]._name << "["
 							<< clients[i]._id << "] " << "를 무찔러 " << rewardEXP
 							<< "의 경험치를 얻었습니다\n";
+						clients[i].isNpcDead = true;
 					}
 				}
 			}
@@ -467,7 +472,7 @@ void process_packet(int c_id, char* packet)
 							clients[c_id].maxexp = clients[c_id].level * 100;
 							clients[c_id].exp = 0;
 
-							cout << clients[c_id]._name << "의 레벨이 " << clients[i].level
+							cout << clients[c_id]._name << "의 레벨이 " << clients[c_id].level
 								<< "가 되었습니다\n";
 						}
 						scp.level = clients[c_id].level;
@@ -479,6 +484,7 @@ void process_packet(int c_id, char* packet)
 						cout << clients[c_id]._name << "가 " << clients[i]._name << "["
 							<< clients[i]._id << "] " << "를 무찔러 " << rewardEXP
 							<< "의 경험치를 얻었습니다\n";
+						clients[i].isNpcDead = true;
 					}
 				}
 			}

@@ -47,6 +47,7 @@ class OBJECT {
 private:
 	bool m_showing;
 	sf::Sprite m_sprite;
+	sf::Sprite m_HPBar;
 	sf::Text m_name;
 public:
 	int id;
@@ -59,6 +60,14 @@ public:
 		m_showing = false;
 		m_sprite.setTexture(t);
 		m_sprite.setTextureRect(sf::IntRect(x, y, x2, y2));
+		set_name("NONAME");
+	}
+	OBJECT(sf::Texture& t, int x, int y, int x2, int y2, sf::Texture& hpbar, int tx, int ty, int tx2, int ty2) {
+		m_showing = false;
+		m_sprite.setTexture(t);
+		m_sprite.setTextureRect(sf::IntRect(x, y, x2, y2));
+		m_HPBar.setTexture(hpbar);
+		m_HPBar.setTextureRect(sf::IntRect(tx, ty, tx2, ty2));
 		set_name("NONAME");
 	}
 	OBJECT() {
@@ -81,6 +90,7 @@ public:
 
 	void a_move(int x, int y) {
 		m_sprite.setPosition((float)x, (float)y);
+		m_HPBar.setPosition((float)x, (float)y);
 	}
 
 	void a_draw() {
@@ -97,9 +107,19 @@ public:
 		float ry = (m_y - g_top_y) * 65.0f + 8;
 		m_sprite.setPosition(rx, ry);
 		g_window->draw(m_sprite);
+		m_HPBar.setPosition(rx, ry);
+		g_window->draw(m_HPBar);
 
 		m_name.setPosition(rx - 10, ry - 20);
 		g_window->draw(m_name);
+	}
+	void idraw()
+	{
+		if (false == m_showing) return;
+		float rx = (m_x - g_left_x) * 65.0f + 8;
+		float ry = (m_y - g_top_y) * 65.0f + 8;
+		m_sprite.setPosition(rx, ry);
+		g_window->draw(m_sprite);
 	}
 	bool isShow()
 	{
@@ -117,6 +137,8 @@ public:
 OBJECT avatar;
 OBJECT players[MAX_USER];
 OBJECT npcs[NUM_NPC];
+//OBJECT playerHPbar[MAX_USER];
+
 vector<OBJECT> PlayerSkill;
 
 OBJECT white_tile;
@@ -130,6 +152,7 @@ sf::Texture* wraith;
 sf::Texture* devil;
 sf::Texture* diablo;
 sf::Texture* AttackSource;
+sf::Texture* HPBar;
 
 void client_initialize()
 {
@@ -140,6 +163,8 @@ void client_initialize()
 	devil = new sf::Texture;
 	diablo = new sf::Texture;
 	AttackSource = new sf::Texture;
+	HPBar = new sf::Texture;
+
 	board->loadFromFile("Texture/Map/0.png");
 	pieces->loadFromFile("Texture/User/player.png");
 	skeleton->loadFromFile("Texture/Monster/Skeleton.png");
@@ -147,6 +172,8 @@ void client_initialize()
 	devil->loadFromFile("Texture/Monster/Devil.png");
 	diablo->loadFromFile("Texture/Monster/Diablo.png");
 	AttackSource->loadFromFile("Texture/UserAttack/fire.png");
+	HPBar->loadFromFile("Texture/User/HPBar.bmp");
+
 	white_tile = OBJECT{ *board, 500, 220, TILE_WIDTH, TILE_HEIGHT };
 
 	if (false == g_font.loadFromFile("cour.ttf")) {
@@ -161,24 +188,17 @@ void client_initialize()
 		PlayerSkill.push_back(OBJECT{ *AttackSource, 0, 120, 60, 60 });
 	}
 
-	avatar = OBJECT{ *pieces, 65, 50, 200, 200 };
+	avatar = OBJECT{ *pieces, 65, 50, 200, 200, *HPBar, 0, 0, 89, 10 };
 	avatar.move(4, 4);
 	for (auto& pl : players) {
-		pl = OBJECT{ *pieces, 50, 50, 200, 200 };
+		pl = OBJECT{ *pieces, 50, 50, 200, 200, *HPBar, 0, 0, 89, 10 };
 	}
+	/*for (auto& plhpbar : playerHPbar) {
+		plhpbar = OBJECT{ *HPBar, 0, 0, 89, 10 };
+	}*/
 	for (auto& npc : npcs) {
-		npc = OBJECT{ *pieces, 50, 50, 200, 200 };
+		npc = OBJECT{ *skeleton, 0, 0, 38, 73 };
 	}
-	//for (auto& npc : npcs) {	
-	//	if (npc.id < 60000)		// skeleton
-	//		npc = OBJECT{ *skeleton, 0, 0, 38, 73 };
-	//	if (60000 <= npc.id < 110000)	// wraith
-	//		npc = OBJECT{ *wraith, 0, 0, 138, 149 };
-	//	if (110000 <= npc.id < 160000)	// devil
-	//		npc = OBJECT{ *devil, 0, 0, 161, 133 };
-	//	if (160000 <= npc.id < 200000)	// diablo
-	//		npc = OBJECT{ *diablo, 0, 0, 135, 158 };
-	//}
 }
 
 void client_finish()
@@ -189,6 +209,7 @@ void client_finish()
 	delete wraith;
 	delete devil;
 	delete diablo;
+	delete HPBar;
 }
 
 void ProcessPacket(char* ptr)
@@ -207,6 +228,10 @@ void ProcessPacket(char* ptr)
 		avatar.hpmax = packet->hpmax;
 		avatar.level = packet->level;
 		avatar.exp = packet->exp;
+
+		//playerHPbar[avatar.id].m_x = avatar.m_x;
+		//playerHPbar[avatar.id].m_y = avatar.m_y;
+		//playerHPbar[avatar.id].show();
 
 		g_left_x = packet->x - 8;
 		g_top_y = packet->y - 8;
@@ -243,15 +268,6 @@ void ProcessPacket(char* ptr)
 			npcs[id - MAX_USER].move(my_packet->x, my_packet->y);
 			npcs[id - MAX_USER].set_name(my_packet->name);
 			npcs[id - MAX_USER].set_info(my_packet->level, my_packet->hp, my_packet->hpmax);
-		
-			//if (my_packet->id - MAX_USER < 60000)		// skeleton
-			//	npcs[id - MAX_USER] = OBJECT{ *skeleton, 0, 0, 38, 73 };
-			//if (60000 <= my_packet->id - MAX_USER < 110000)	// wraith
-			//	npcs[id - MAX_USER] = OBJECT{ *wraith, 0, 0, 138, 149 };
-			//if (110000 <= my_packet->id - MAX_USER < 160000)	// devil
-			//	npcs[id - MAX_USER] = OBJECT{ *devil, 0, 0, 161, 133 };
-			//if (160000 <= my_packet->id - MAX_USER < 200000)	// diablo
-			//	npcs[id - MAX_USER] = OBJECT{ *diablo, 0, 0, 135, 158 };
 
 			npcs[id - MAX_USER].show();
 		}
@@ -287,6 +303,7 @@ void ProcessPacket(char* ptr)
 		}
 		else {
 			npcs[other_id - MAX_USER].hide();
+			
 		}
 		break;
 	}
@@ -359,7 +376,7 @@ void client_main()
 		}
 	avatar.draw();
 	for (int i = 0; i < 4; ++i)
-		PlayerSkill[i].draw();
+		PlayerSkill[i].idraw();
 
 	// 임시방편
 	if (PlayerSkill[0].isShow())
@@ -376,6 +393,7 @@ void client_main()
 	}
 
 	for (auto& pl : players) pl.draw();
+	//for (auto& plhpbar : playerHPbar) plhpbar.idraw();
 	for (auto& pl : npcs) pl.draw();
 }
 
