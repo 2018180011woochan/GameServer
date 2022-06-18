@@ -118,6 +118,7 @@ public:
 	mutex	run_l;
 	bool isNpcRun;
 	bool isNpcDead;
+	bool isPlay;
 
 	chrono::system_clock::time_point next_move_time;
 	int		_prev_remain;
@@ -142,6 +143,7 @@ public:
 		next_move_time = chrono::system_clock::now() + chrono::seconds(1);
 		isNpcRun = false;
 		isNpcDead = false;
+		isPlay = false;
 	}
 
 	~SESSION() {}
@@ -275,12 +277,25 @@ void process_packet(int c_id, char* packet)
 	case CS_LOGIN: {
 		CS_LOGIN_PACKET* p = reinterpret_cast<CS_LOGIN_PACKET*>(packet);
 
-		if (!isAllowAccess(p->db_id, c_id))
+		for (int i = 0; i < MAX_USER; ++i)
 		{
-			//clients[c_id]._db_id = p->db_id;
-			//clients[c_id].send_login(false);
-			//break;
+			if (clients[i]._db_id == p->db_id)
+			{
+				if (clients[i].isPlay)
+				{
+					// loginfail보내기
+					SC_LOGIN_FAIL_PACKET login_fail_packet;
+					login_fail_packet.size = sizeof(SC_LOGIN_FAIL_PACKET);
+					login_fail_packet.type = SC_LOGIN_FAIL;
+					login_fail_packet.reason = 1;
+					clients[c_id].do_send(&login_fail_packet);
+					return;
+				}
+			}
 		}
+
+		clients[c_id].isPlay = true;
+		isAllowAccess(p->db_id, c_id);
 
 		clients[c_id]._sl.lock();
 		if (clients[c_id]._s_state == ST_FREE) {
@@ -531,6 +546,8 @@ void disconnect(int c_id)
 	closesocket(clients[c_id]._socket);
 	clients[c_id]._s_state = ST_FREE;
 	clients[c_id]._sl.unlock();
+
+	clients[c_id].isPlay = false;
 
 	for (auto& pl : clients) {
 		if (pl._id == c_id) continue;
@@ -841,7 +858,7 @@ bool isAllowAccess(int db_id, int cid)
 			retcode = SQLFetch(hstmt);
 			if (retcode == SQL_SUCCESS || retcode == SQL_SUCCESS_WITH_INFO)
 			{
-				////// DB에서 위치 받아오기 //////////		
+				////// DB에서 정보 받아오기 //////////		
 				clients[cid].race = user_race;
 				clients[cid].x = user_xpos;
 				clients[cid].y = user_ypos;
@@ -853,7 +870,7 @@ bool isAllowAccess(int db_id, int cid)
 			}
 			else
 			{
-				std::cout << "그런 아이디는 없습니다\n";
+				std::cout << "DB에 정보가 없어 추가하였습니다\n";
 				return false;
 			}
 		}

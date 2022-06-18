@@ -243,6 +243,19 @@ void ProcessPacket(char* ptr)
 		avatar.show();
 		break;
 	}
+	case SC_LOGIN_FAIL:
+	{
+		SC_LOGIN_FAIL_PACKET *packet = reinterpret_cast<SC_LOGIN_FAIL_PACKET*>(ptr);
+		switch (packet->reason)
+		{
+		case 1:
+			cout << "이미 접속한 ID입니다\n";
+			break;
+		default:
+			break;
+		}
+		break;
+	}
 
 	case SC_ADD_OBJECT:
 	{
