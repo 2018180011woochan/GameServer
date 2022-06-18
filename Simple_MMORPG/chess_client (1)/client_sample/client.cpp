@@ -46,9 +46,9 @@ char NickName[200] = "ALEX Jr";
 class OBJECT {
 private:
 	bool m_showing;
-	sf::Sprite m_sprite;
-	
+	sf::Sprite m_sprite;	
 	sf::Text m_name;
+	sf::Text m_level;
 public:
 	int id;
 	int m_x, m_y;
@@ -62,6 +62,7 @@ public:
 		m_sprite.setTexture(t);
 		m_sprite.setTextureRect(sf::IntRect(x, y, x2, y2));
 		set_name("NONAME");
+		set_level(0);
 	}
 	OBJECT(sf::Texture& t, int x, int y, int x2, int y2, sf::Texture& hpbar, int tx, int ty, int tx2, int ty2) {
 		m_showing = false;
@@ -70,6 +71,7 @@ public:
 		m_HPBar.setTexture(hpbar);
 		m_HPBar.setTextureRect(sf::IntRect(tx, ty, tx2, ty2));
 		set_name("NONAME");
+		set_level(0);
 	}
 	OBJECT() {
 		m_showing = false;
@@ -91,14 +93,11 @@ public:
 
 	void a_move(int x, int y) {
 		m_sprite.setPosition((float)x, (float)y);
-		//int temp = 10;
-		//m_HPBar.setTextureRect(sf::IntRect(0, 0, 20, 10));
-		//m_HPBar.setPosition((float)x, (float)y);
+
 	}
 
 	void a_draw() {
 		g_window->draw(m_sprite);
-		//g_window->draw(m_HPBar);
 	}
 
 	void move(int x, int y) {
@@ -114,8 +113,11 @@ public:
 		m_HPBar.setPosition(rx, ry);
 		g_window->draw(m_HPBar);
 
-		m_name.setPosition(rx - 10, ry - 20);
+		m_name.setPosition(rx, ry - 20);
 		g_window->draw(m_name);
+
+		m_level.setPosition(rx - 40, ry - 20);
+		g_window->draw(m_level);
 	}
 	void idraw()
 	{
@@ -135,6 +137,13 @@ public:
 		m_name.setString(str);
 		m_name.setFillColor(sf::Color(255, 255, 0));
 		m_name.setStyle(sf::Text::Bold);
+	}
+
+	void set_level(int level){
+		m_level.setFont(g_font);
+		m_level.setString((const char)level);
+		m_level.setFillColor(sf::Color(255, 255, 0));
+		m_level.setStyle(sf::Text::Bold);
 	}
 };
 
@@ -219,14 +228,14 @@ void ProcessPacket(char* ptr)
 	{
 		SC_LOGIN_OK_PACKET * packet = reinterpret_cast<SC_LOGIN_OK_PACKET*>(ptr);
 		avatar.id = packet->id;
-		avatar.set_name(NickName);
 		avatar.m_x = packet->x;
 		avatar.m_y = packet->y;
 		avatar.hp = packet->hp;
 		avatar.hpmax = packet->hpmax;
 		avatar.level = packet->level;
 		avatar.exp = packet->exp;
-
+		avatar.set_name(NickName);
+		avatar.set_level(avatar.level);
 		g_left_x = packet->x - 8;
 		g_top_y = packet->y - 8;
 		avatar.show();
@@ -241,6 +250,7 @@ void ProcessPacket(char* ptr)
 		if (id < MAX_USER) {
 			players[id].move(my_packet->x, my_packet->y);
 			players[id].set_name(my_packet->name);
+			players[id].set_level(my_packet->level);
 			players[id].show();
 		}
 		else {
@@ -261,6 +271,7 @@ void ProcessPacket(char* ptr)
 			}
 			npcs[id - MAX_USER].move(my_packet->x, my_packet->y);
 			npcs[id - MAX_USER].set_name(my_packet->name);
+			npcs[id - MAX_USER].set_level(my_packet->level);
 			npcs[id - MAX_USER].set_info(my_packet->level, my_packet->hp, my_packet->hpmax);
 
 			npcs[id - MAX_USER].show();
