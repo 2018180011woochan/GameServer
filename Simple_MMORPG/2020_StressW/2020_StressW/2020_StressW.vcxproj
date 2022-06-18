@@ -139,7 +139,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\Server\Server\protocol.h" />
+    <ClInclude Include="..\..\multi_iocp_server\multi_iocp_server\protocol.h" />
     <ClInclude Include="NetworkModule.h" />
   </ItemGroup>
   <ItemGroup>

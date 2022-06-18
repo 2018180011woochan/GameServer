@@ -29,11 +29,11 @@ const static int MAX_BUFF_SIZE = 255;
 #pragma comment (lib, "ws2_32.lib")
 
 //#include "..\..\2020_IOCP_SERVER\2020_IOCP_SERVER\protocol.h"
-#include "..\..\Server\Server\protocol.h"
+#include "..\..\multi_iocp_server\multi_iocp_server\protocol.h"
 
 HANDLE g_hiocp;
 
-enum OPTYPE { OP_SEND, OP_RECV, OP_DO_MOVE };
+enum OPTYPE { OP_SEND, OP_RECV, OP_DO_MOVE, OP_PLAYER_MOVE };
 
 high_resolution_clock::time_point last_connect_time;
 
@@ -129,8 +129,8 @@ void SendPacket(int cl, void* packet)
 void ProcessPacket(int ci, unsigned char packet[])
 {
 	switch (packet[1]) {
-	case SC_MOVE_PLAYER: {
-		SC_MOVE_PLAYER_PACKET* move_packet = reinterpret_cast<SC_MOVE_PLAYER_PACKET*>(packet);
+	case SC_MOVE_OBJECT: {
+		SC_MOVE_OBJECT_PACKET* move_packet = reinterpret_cast<SC_MOVE_OBJECT_PACKET*>(packet);
 		if (move_packet->id < MAX_CLIENTS) {
 			int my_id = client_map[move_packet->id];
 			if (-1 != my_id) {
@@ -148,13 +148,14 @@ void ProcessPacket(int ci, unsigned char packet[])
 		}
 	}
 					   break;
-	case SC_ADD_PLAYER: break;
-	case SC_REMOVE_PLAYER: break;
-	case SC_LOGIN_INFO:
+	case SC_ADD_OBJECT: break;
+	
+	case SC_REMOVE_OBJECT: break;
+	case SC_LOGIN_OK:
 	{
 		g_clients[ci].connected = true;
 		active_clients++;
-		SC_LOGIN_INFO_PACKET* login_packet = reinterpret_cast<SC_LOGIN_INFO_PACKET*>(packet);
+		SC_LOGIN_OK_PACKET* login_packet = reinterpret_cast<SC_LOGIN_OK_PACKET*>(packet);
 		int my_id = ci;
 		client_map[login_packet->id] = my_id;
 		g_clients[my_id].id = login_packet->id;
@@ -167,6 +168,9 @@ void ProcessPacket(int ci, unsigned char packet[])
 		//SendPacket(my_id, &t_packet);
 	}
 	break;
+	case SC_LOGIN_FAIL: break;
+	case SC_CHAT: break;
+	case SC_STAT_CHANGE: break;
 	default: MessageBox(hWnd, L"Unknown Packet Type", L"ERROR", 0);
 		while (true);
 	}

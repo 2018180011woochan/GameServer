@@ -490,6 +490,7 @@ void Login()
 	p.size = sizeof(CS_LOGIN_PACKET);
 	p.type = CS_LOGIN;
 	p.db_id = db_id;
+
 	strcpy_s(p.name, NickName);
 	send_packet(&p);
 }
@@ -501,18 +502,6 @@ int main()
 	socket.setBlocking(false);
 
 	Login();
-	/*int db_id = 0;
-	cout << "ID를 입력하세요 ";
-	cin >> db_id;
-	cout << "\n닉네임을 입력하세요 ";
-	cin >> NickName;*/
-
-	/*CS_LOGIN_PACKET p;
-	p.size = sizeof(CS_LOGIN_PACKET);
-	p.type = CS_LOGIN;
-	p.db_id = db_id;
-	strcpy_s(p.name, NickName);
-	send_packet(&p);*/
 
 	if (status != sf::Socket::Done) {
 		wcout << L"서버와 연결할 수 없습니다.\n";
