@@ -333,6 +333,13 @@ void process_packet(int c_id, char* packet)
 		CS_MOVE_PACKET* p = reinterpret_cast<CS_MOVE_PACKET*>(packet);
 		short x = clients[c_id].x;
 		short y = clients[c_id].y;
+
+		unordered_set<int> old_vl;
+		for (int i = MAX_USER; i < NUM_NPC; ++i) {
+			if (clients[i]._s_state != ST_INGAME) continue;
+			if (distance(c_id, i) <= RANGE) old_vl.insert(i);
+		}
+
 		switch (p->direction) {
 		case 0: if (y > 0) y--; break;
 		case 1: if (y < W_HEIGHT - 1) y++; break;
@@ -347,6 +354,32 @@ void process_packet(int c_id, char* packet)
 			if (ST_INGAME == pl._s_state)
 				pl.send_move_packet(c_id, p->client_time);
 		}
+		///////////////////// NPC ½Ã¾ß ///////////////////////////////// 
+		unordered_set<int> new_vl;
+		for (int i = MAX_USER; i < NUM_NPC; ++i) {
+			if (clients[i]._s_state != ST_INGAME) continue;
+			if (distance(c_id, i) <= RANGE) new_vl.insert(i);
+		}
+
+		for (auto p_id : new_vl) {
+			if (0 == clients[c_id].view_list.count(p_id)) {
+				clients[c_id].view_list.insert(p_id);
+				clients[c_id].send_add_object(p_id);
+			}
+			else {
+				clients[c_id].send_move_packet(p_id, 0);
+			}
+		}
+		for (auto p_id : old_vl) {
+			if (0 == new_vl.count(p_id)) {
+				if (clients[c_id].view_list.count(p_id) == 1) {
+					clients[c_id].view_list.erase(p_id);
+
+					clients[c_id].send_remove_object(p_id);
+				}
+			}
+		}
+		////////////////////////////////////////////////////////////////////
 
 		for (int i = 0; i < NUM_NPC; ++i) {
 			int npc_id = MAX_USER + i;
