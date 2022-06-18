@@ -656,6 +656,54 @@ void move_npc(int npc_id)
 	}
 }
 
+void AttackNPC(int npc_id)
+{
+	for (int i = 0; i < MAX_USER; ++i) {
+		if (clients[i]._s_state != ST_INGAME) continue;
+		if (clients[npc_id].y == clients[i].y) {
+			if (abs(clients[npc_id].x - clients[i].x) == 1) {	// 좌우
+				int AttackPower = clients[npc_id].level * 10;
+				clients[i].hp -= AttackPower;
+
+				SC_STAT_CHANGE_PACKET scp;
+				scp.size = sizeof(SC_STAT_CHANGE_PACKET);
+				scp.type = SC_STAT_CHANGE;
+				scp.id = i;
+				scp.hp = clients[i].hp;
+				scp.hpmax = clients[i].hpmax;
+				scp.exp = clients[i].exp;
+				scp.level = clients[i].level;
+
+				cout << clients[npc_id]._name << "[" << clients[i]._id << "] " << "의 공격으로 "
+					<< clients[i]._name << "의 HP가 " << clients[i].hp << "가 되었습니다.\n";
+
+				clients[i].do_send(&scp);
+			}
+		}
+
+		if (clients[npc_id].x == clients[i].x) {
+			if (abs(clients[npc_id].y - clients[i].y) == 1) {	// 상하
+				int AttackPower = clients[npc_id].level * 10;
+				clients[i].hp -= AttackPower;
+
+				SC_STAT_CHANGE_PACKET scp;
+				scp.size = sizeof(SC_STAT_CHANGE_PACKET);
+				scp.type = SC_STAT_CHANGE;
+				scp.id = i;
+				scp.hp = clients[i].hp;
+				scp.hpmax = clients[i].hpmax;
+				scp.exp = clients[i].exp;
+				scp.level = clients[i].level;
+
+				cout << clients[npc_id]._name << "[" << clients[i]._id << "] " << "의 공격으로 "
+					<< clients[i]._name << "의 HP가 " << clients[i].hp << "가 되었습니다.\n";
+
+				clients[i].do_send(&scp);
+			}
+		}
+	}
+}
+
 void do_ai_ver_1()
 {
 	for (;;) {
@@ -663,7 +711,8 @@ void do_ai_ver_1()
 		for (int i = 0; i < NUM_NPC; ++i) {
 			int npc_id = i + MAX_USER;
 			if (start_t > clients[npc_id].next_move_time) {
-				move_npc(npc_id);
+				//move_npc(npc_id);
+				AttackNPC(npc_id);
 				clients[npc_id].next_move_time = start_t + chrono::seconds(1);
 			}
 		}
@@ -1018,7 +1067,7 @@ int main()
 	for (int i = 0; i < 6; ++i)
 		worker_threads.emplace_back(do_worker);
 
-	thread ai_thread{ do_ai_ver_heat_beat };
+	thread ai_thread{ do_ai_ver_1 };
 	ai_thread.join();
 	
 	for (auto& th : worker_threads)

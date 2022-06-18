@@ -293,7 +293,6 @@ void ProcessPacket(char* ptr)
 			avatar.hp = my_packet->hp;
 			avatar.hpmax = my_packet->hpmax;
 			
-			avatar.hp -= 10;
 			int curhp = 89 * avatar.hp / avatar.hpmax;
 
 			avatar.m_HPBar.setTextureRect(sf::IntRect(0, 0, curhp, 10));
