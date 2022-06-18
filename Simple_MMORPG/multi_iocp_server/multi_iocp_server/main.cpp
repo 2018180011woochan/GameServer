@@ -267,7 +267,7 @@ void process_packet(int c_id, char* packet)
 	switch (packet[1]) {
 	case CS_LOGIN: {
 		CS_LOGIN_PACKET* p = reinterpret_cast<CS_LOGIN_PACKET*>(packet);
-		
+
 		//if (!isAllowAccess(p->client_id, c_id))
 		//{
 		//	clients[c_id]._clientid = p->client_id;
@@ -317,7 +317,7 @@ void process_packet(int c_id, char* packet)
 		}
 		for (auto& pl : clients) {
 			if (pl._id == c_id) continue;
-			lock_guard<mutex> aa {pl._sl};
+			lock_guard<mutex> aa{ pl._sl };
 			if (ST_INGAME != pl._s_state) continue;
 
 			if (RANGE >= distance(pl._id, c_id)) {
@@ -348,7 +348,7 @@ void process_packet(int c_id, char* packet)
 		}
 		clients[c_id].x = x;
 		clients[c_id].y = y;
-		for (int i = 0; i < MAX_USER;++i) {
+		for (int i = 0; i < MAX_USER; ++i) {
 			auto& pl = clients[i];
 			lock_guard<mutex> aa{ pl._sl };
 			if (ST_INGAME == pl._s_state)
@@ -393,6 +393,35 @@ void process_packet(int c_id, char* packet)
 
 		//SavePos(clients[c_id]._clientid, c_id);
 
+		break;
+	}
+	case CS_ATTACK: {
+		for (int i = MAX_USER; i < NUM_NPC; ++i) {
+			if (clients[c_id].x == clients[i].x) {
+				if (abs(clients[c_id].y - clients[i].y) == 1) {	// 상하
+					clients[i].hp -= clients[c_id].level * 50;
+					if (clients[i].hp <= 0) {					// 처치한다면
+						SC_REMOVE_OBJECT_PACKET p;
+						p.size = sizeof(SC_REMOVE_OBJECT_PACKET);
+						p.type = SC_REMOVE_OBJECT;
+						p.id = i;
+						clients[c_id].do_send(&p);				// 나중에는 접속한 모든 플레이어한테 보내야할듯
+					}
+				}
+			}
+			if (clients[c_id].y == clients[i].y) {
+				if (abs(clients[c_id].x - clients[i].x) == 1) {	// 좌우
+					clients[i].hp -= clients[c_id].level * 50;
+					if (clients[i].hp <= 0) {					// 처치한다면
+						SC_REMOVE_OBJECT_PACKET p;
+						p.size = sizeof(SC_REMOVE_OBJECT_PACKET);
+						p.type = SC_REMOVE_OBJECT;
+						p.id = i;
+						clients[c_id].do_send(&p);				// 나중에는 접속한 모든 플레이어한테 보내야할듯
+					}
+				}
+			}
+		}
 		break;
 	}
 	}

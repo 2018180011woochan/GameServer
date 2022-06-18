@@ -243,8 +243,7 @@ void ProcessPacket(char* ptr)
 			npcs[id - MAX_USER].move(my_packet->x, my_packet->y);
 			npcs[id - MAX_USER].set_name(my_packet->name);
 			npcs[id - MAX_USER].set_info(my_packet->level, my_packet->hp, my_packet->hpmax);
-
-			
+		
 			//if (my_packet->id - MAX_USER < 60000)		// skeleton
 			//	npcs[id - MAX_USER] = OBJECT{ *skeleton, 0, 0, 38, 73 };
 			//if (60000 <= my_packet->id - MAX_USER < 110000)	// wraith
@@ -450,6 +449,10 @@ int main()
 					PlayerSkill[3].m_y = avatar.m_y;
 					PlayerSkill[3].show();
 					
+					CS_ATTACK_PACKET p;
+					p.size = sizeof(CS_ATTACK_PACKET);
+					p.type = CS_ATTACK;
+					send_packet(&p);
 					break;
 				case sf::Keyboard::Escape:
 					window.close();
