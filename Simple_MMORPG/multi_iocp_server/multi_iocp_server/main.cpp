@@ -279,7 +279,7 @@ void process_packet(int c_id, char* packet)
 		{
 			//clients[c_id]._db_id = p->db_id;
 			//clients[c_id].send_login(false);
-			break;
+			//break;
 		}
 
 		clients[c_id]._sl.lock();
@@ -794,6 +794,25 @@ void SavePos(int clientid, int cid)
 	///// ////////////////////////////////////////////////////////////////////////////////////////
 }
 
+void ShowError(SQLHANDLE hHandle, SQLSMALLINT hType, RETCODE RetCode)
+{
+	SQLSMALLINT iRec = 0;
+	SQLINTEGER iError;
+	WCHAR wszMessage[1000];
+	WCHAR wszState[SQL_SQLSTATE_SIZE + 1];
+	if (RetCode == SQL_INVALID_HANDLE) {
+		fwprintf(stderr, L"Invalid handle!\n");
+		return;
+	}
+	while (SQLGetDiagRec(hType, hHandle, ++iRec, wszState, &iError, wszMessage,
+		(SQLSMALLINT)(sizeof(wszMessage) / sizeof(WCHAR)), (SQLSMALLINT*)NULL) == SQL_SUCCESS) {
+		// Hide data truncated..
+		if (wcsncmp(wszState, L"01004", 5)) {
+			fwprintf(stderr, L"[%5.5s] %s (%d)\n", wszState, wszMessage, iError);
+		}
+	}
+}
+
 bool isAllowAccess(int db_id, int cid)
 {
 	retcode = SQLAllocHandle(SQL_HANDLE_STMT, hdbc, &hstmt);
@@ -804,6 +823,7 @@ bool isAllowAccess(int db_id, int cid)
 	storedProcedure += _db_id;
 
 	retcode = SQLExecDirect(hstmt, (SQLWCHAR*)storedProcedure.c_str(), SQL_NTS);
+	ShowError(hstmt, SQL_HANDLE_STMT, retcode);
 
 	if (retcode == SQL_SUCCESS || retcode == SQL_SUCCESS_WITH_INFO) {
 
