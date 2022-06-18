@@ -40,12 +40,14 @@ SQLHDBC hdbc;
 SQLHSTMT hstmt = 0;
 SQLRETURN retcode;
 
-SQLINTEGER user_id, user_xpos, user_ypos;
-SQLLEN cbuser_id = 0, cbuser_xpos = 0, cbuser_ypos = 0;
+SQLINTEGER user_id, user_race, user_xpos, user_ypos, user_level, user_exp, user_hp, user_hpmax;
+SQLLEN cbuser_id = 0, cbrace = 0, cbuser_xpos = 0, cbuser_ypos = 0, cbuser_level,
+		cbuser_exp, cbuser_hp, cbuser_hpmax;
 /// //////////////////////////////
 
 bool isAllowAccess(int clientid, int cid);
 void SavePos(int clientid, int cid);
+void Save_UserInfo(int db_id, int c_id);
 
 enum EVENT_TYPE { EV_MOVE, EV_HEAL, EV_ATTACK };
 struct TIMER_EVENT {
@@ -100,6 +102,7 @@ public:
 	//int _clientid;
 	SOCKET _socket;
 	int		_id;
+	int		_db_id;
 	short	x, y;
 	char	_name[NAME_SIZE];
 	short	race;
@@ -171,6 +174,7 @@ public:
 		p.exp = exp;
 		p.hpmax = hpmax;
 		p.hp = p.hpmax;
+		p.race = RACE::RACE_PLAYER;
 		////////////////////////////////////////////////////////////////
 		do_send(&p);
 	}
@@ -271,12 +275,12 @@ void process_packet(int c_id, char* packet)
 	case CS_LOGIN: {
 		CS_LOGIN_PACKET* p = reinterpret_cast<CS_LOGIN_PACKET*>(packet);
 
-		//if (!isAllowAccess(p->client_id, c_id))
-		//{
-		//	clients[c_id]._clientid = p->client_id;
-		//	clients[c_id].send_login_info_packet(false);
-		//	break;
-		//}
+		if (!isAllowAccess(p->db_id, c_id))
+		{
+			//clients[c_id]._db_id = p->db_id;
+			//clients[c_id].send_login(false);
+			break;
+		}
 
 		clients[c_id]._sl.lock();
 		if (clients[c_id]._s_state == ST_FREE) {
@@ -290,7 +294,8 @@ void process_packet(int c_id, char* packet)
 		}
 
 		strcpy_s(clients[c_id]._name, p->name);
-		clients[c_id]._id = p->id;
+		clients[c_id]._id = c_id;
+		clients[c_id]._db_id = p->db_id;
 		clients[c_id].send_login_ok_packet();
 		clients[c_id]._s_state = ST_INGAME;
 		clients[c_id]._sl.unlock();
@@ -298,8 +303,8 @@ void process_packet(int c_id, char* packet)
 		//clients[c_id].x = rand() % W_WIDTH;
 		//clients[c_id].y = rand() % W_HEIGHT;
 
-		clients[c_id].x = 0;
-		clients[c_id].y = 0;
+		//clients[c_id].x = 0;
+		//clients[c_id].y = 0;
 
 
 		for (int i = 0; i < MAX_USER; ++i) {
@@ -394,7 +399,7 @@ void process_packet(int c_id, char* packet)
 			}
 		}
 
-		//SavePos(clients[c_id]._clientid, c_id);
+		Save_UserInfo(clients[c_id]._db_id, c_id);
 
 		break;
 	}
@@ -789,35 +794,41 @@ void SavePos(int clientid, int cid)
 	///// ////////////////////////////////////////////////////////////////////////////////////////
 }
 
-bool isAllowAccess(int clientid, int cid)
+bool isAllowAccess(int db_id, int cid)
 {
-	/// //////////////////////////////////////////////////////////////////////////////
 	retcode = SQLAllocHandle(SQL_HANDLE_STMT, hdbc, &hstmt);
 
-	wstring c_id = to_wstring(clientid);
+	wstring _db_id = to_wstring(db_id);
 
-	wstring storedProcedure = L"EXEC selectid ";
-	storedProcedure += c_id;
+	wstring storedProcedure = L"EXEC select_info ";
+	storedProcedure += _db_id;
 
 	retcode = SQLExecDirect(hstmt, (SQLWCHAR*)storedProcedure.c_str(), SQL_NTS);
 
 	if (retcode == SQL_SUCCESS || retcode == SQL_SUCCESS_WITH_INFO) {
 
 		// Bind columns 1, 2, and 3  
-		retcode = SQLBindCol(hstmt, 1, SQL_C_LONG, &user_id, 10, &cbuser_id);
+		retcode = SQLBindCol(hstmt, 1, SQL_C_LONG, &user_race, 10, &cbrace);
 		retcode = SQLBindCol(hstmt, 2, SQL_C_LONG, &user_xpos, 10, &cbuser_xpos);
 		retcode = SQLBindCol(hstmt, 3, SQL_C_LONG, &user_ypos, 10, &cbuser_ypos);
+		retcode = SQLBindCol(hstmt, 4, SQL_C_LONG, &user_level, 10, &cbuser_level);
+		retcode = SQLBindCol(hstmt, 5, SQL_C_LONG, &user_exp, 10, &cbuser_exp);
+		retcode = SQLBindCol(hstmt, 6, SQL_C_LONG, &user_hp, 10, &cbuser_hp);
+		retcode = SQLBindCol(hstmt, 7, SQL_C_LONG, &user_hpmax, 10, &cbuser_hpmax);
 
 		// Fetch and print each row of data. On an error, display a message and exit.  
 		for (int i = 0; ; i++) {
 			retcode = SQLFetch(hstmt);
 			if (retcode == SQL_SUCCESS || retcode == SQL_SUCCESS_WITH_INFO)
 			{
-				//printf("ID %5d : x : %5d, y : %5d\n", user_id, user_xpos, user_ypos);
-
 				////// DB에서 위치 받아오기 //////////		
+				clients[cid].race = user_race;
 				clients[cid].x = user_xpos;
 				clients[cid].y = user_ypos;
+				clients[cid].level = user_level;
+				clients[cid].exp = user_exp;
+				clients[cid].hp = user_hp;
+				clients[cid].hpmax = user_hpmax;
 				return true;
 			}
 			else
@@ -827,7 +838,6 @@ bool isAllowAccess(int clientid, int cid)
 			}
 		}
 	}
-	/// ////////////////////////////////////////////////////////////////////////////////////////
 }
 
 int API_SendMessage(lua_State* L)
@@ -1040,6 +1050,55 @@ void do_timer()
 
 }
 
+void Save_UserInfo(int db_id, int c_id)
+{
+	retcode = SQLAllocHandle(SQL_HANDLE_STMT, hdbc, &hstmt);
+
+	wstring mydb_id = to_wstring(clients[c_id]._db_id);
+	wstring race = to_wstring(clients[c_id].race);
+	wstring xpos = to_wstring(clients[c_id].x);
+	wstring ypos = to_wstring(clients[c_id].y);
+	wstring userlevel = to_wstring(clients[c_id].level);
+	wstring exp = to_wstring(clients[c_id].exp);
+	wstring hp = to_wstring(clients[c_id].hp);
+	wstring hpmax = to_wstring(clients[c_id].hpmax);
+
+	wstring storedProcedure = L"EXEC update_userinfo ";
+	storedProcedure += mydb_id;
+	storedProcedure += L", ";
+	storedProcedure += race;
+	storedProcedure += L", ";
+	storedProcedure += xpos;
+	storedProcedure += L", ";
+	storedProcedure += ypos;
+	storedProcedure += L", ";
+	storedProcedure += userlevel;
+	storedProcedure += L", ";
+	storedProcedure += exp;
+	storedProcedure += L", ";
+	storedProcedure += hp;
+	storedProcedure += L", ";
+	storedProcedure += hpmax;
+
+	retcode = SQLExecDirect(hstmt, (SQLWCHAR*)storedProcedure.c_str(), SQL_NTS);
+
+	if (retcode == SQL_SUCCESS || retcode == SQL_SUCCESS_WITH_INFO) {
+		retcode = SQLBindCol(hstmt, 1, SQL_C_LONG, &user_id, 10, &cbuser_id);
+		retcode = SQLBindCol(hstmt, 2, SQL_C_LONG, &user_race, 10, &cbrace);
+		retcode = SQLBindCol(hstmt, 3, SQL_C_LONG, &user_xpos, 10, &cbuser_xpos);
+		retcode = SQLBindCol(hstmt, 4, SQL_C_LONG, &user_ypos, 10, &cbuser_ypos);
+		retcode = SQLBindCol(hstmt, 5, SQL_C_LONG, &user_level, 10, &cbuser_level);
+		retcode = SQLBindCol(hstmt, 6, SQL_C_LONG, &user_exp, 10, &cbuser_exp);
+		retcode = SQLBindCol(hstmt, 7, SQL_C_LONG, &user_hp, 10, &cbuser_hp);
+		retcode = SQLBindCol(hstmt, 8, SQL_C_LONG, &user_hpmax, 10, &cbuser_hpmax);
+
+		for (int i = 0; ; i++) {
+			retcode = SQLFetch(hstmt);
+			break;
+		}
+	}
+}
+
 void initialize_DB()
 {
 	setlocale(LC_ALL, "korean");
@@ -1049,7 +1108,7 @@ void initialize_DB()
 	retcode = SQLAllocHandle(SQL_HANDLE_DBC, henv, &hdbc);
 	SQLSetConnectAttr(hdbc, SQL_LOGIN_TIMEOUT, (SQLPOINTER)5, 0);
 
-	retcode = SQLConnect(hdbc, (SQLWCHAR*)L"2018180011_KWC", SQL_NTS, (SQLWCHAR*)NULL, 0, NULL, 0);
+	retcode = SQLConnect(hdbc, (SQLWCHAR*)L"KWC_2018180011", SQL_NTS, (SQLWCHAR*)NULL, 0, NULL, 0);
 
 	retcode = SQLAllocHandle(SQL_HANDLE_STMT, hdbc, &hstmt);
 
@@ -1059,7 +1118,7 @@ void initialize_DB()
 int main()
 {
 	initialize_npc();
-	//initialize_DB();
+	initialize_DB();
 
 	WSADATA WSAData;
 	WSAStartup(MAKEWORD(2, 2), &WSAData);

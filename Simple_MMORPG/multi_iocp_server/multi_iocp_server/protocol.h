@@ -28,7 +28,7 @@ struct CS_LOGIN_PACKET {
 	unsigned char size;
 	char	type;
 	char	name[NAME_SIZE];
-	int		id;
+	int		db_id;
 };
 
 struct CS_MOVE_PACKET {
