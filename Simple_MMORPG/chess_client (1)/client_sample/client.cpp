@@ -139,9 +139,9 @@ public:
 		m_name.setStyle(sf::Text::Bold);
 	}
 
-	void set_level(int level){
+	void set_level(const char level[]){
 		m_level.setFont(g_font);
-		m_level.setString((const char)level);
+		m_level.setString(level);
 		m_level.setFillColor(sf::Color(255, 255, 0));
 		m_level.setStyle(sf::Text::Bold);
 	}
@@ -235,7 +235,9 @@ void ProcessPacket(char* ptr)
 		avatar.level = packet->level;
 		avatar.exp = packet->exp;
 		avatar.set_name(NickName);
-		avatar.set_level(avatar.level);
+		char lev[10];
+		sprintf_s(lev, "%d", avatar.level);
+		avatar.set_level(lev);
 		g_left_x = packet->x - 8;
 		g_top_y = packet->y - 8;
 		avatar.show();
@@ -250,7 +252,11 @@ void ProcessPacket(char* ptr)
 		if (id < MAX_USER) {
 			players[id].move(my_packet->x, my_packet->y);
 			players[id].set_name(my_packet->name);
-			players[id].set_level(my_packet->level);
+
+			char lev[10];
+			sprintf_s(lev, "%d", my_packet->level);
+			players[id].set_level(lev);
+
 			players[id].show();
 		}
 		else {
@@ -271,7 +277,9 @@ void ProcessPacket(char* ptr)
 			}
 			npcs[id - MAX_USER].move(my_packet->x, my_packet->y);
 			npcs[id - MAX_USER].set_name(my_packet->name);
-			npcs[id - MAX_USER].set_level(my_packet->level);
+			char lev[10];
+			sprintf_s(lev, "%d", my_packet->level);
+			npcs[id - MAX_USER].set_level(lev);
 			npcs[id - MAX_USER].set_info(my_packet->level, my_packet->hp, my_packet->hpmax);
 
 			npcs[id - MAX_USER].show();
@@ -300,6 +308,12 @@ void ProcessPacket(char* ptr)
 	{
 		SC_STAT_CHANGE_PACKET* my_packet = reinterpret_cast<SC_STAT_CHANGE_PACKET*>(ptr);
 		if (my_packet->id == avatar.id) {
+			if (avatar.level != my_packet->level) {
+				char lev[10];
+				sprintf_s(lev, "%d", my_packet->level);
+				avatar.set_level(lev);
+			}
+
 			avatar.level = my_packet->level;
 			avatar.hp = my_packet->hp;
 			avatar.hpmax = my_packet->hpmax;
@@ -307,6 +321,8 @@ void ProcessPacket(char* ptr)
 			int curhp = 89 * avatar.hp / avatar.hpmax;
 
 			avatar.m_HPBar.setTextureRect(sf::IntRect(0, 0, curhp, 10));
+
+			
 		}
 		else if (my_packet->id < MAX_USER) {
 			players[my_packet->id].level = my_packet->level;
@@ -319,6 +335,10 @@ void ProcessPacket(char* ptr)
 			int curhp = 89 * players[my_packet->id].hp / players[my_packet->id].hpmax;
 
 			players[my_packet->id].m_HPBar.setTextureRect(sf::IntRect(0, 0, curhp, 10));
+
+			char lev[10];
+			sprintf_s(lev, "%d", my_packet->level);
+			players[my_packet->id].set_level(lev);
 		}
 		else {
 			npcs[my_packet->id - MAX_USER].level = my_packet->level;
