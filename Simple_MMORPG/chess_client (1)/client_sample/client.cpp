@@ -36,12 +36,14 @@ constexpr auto WINDOW_HEIGHT = 65 * SCREEN_WIDTH + 10;
 
 int g_left_x;
 int g_top_y;
-//int g_myid;
+
 
 sf::RenderWindow* g_window;
 sf::Font g_font;
 
 char NickName[200] = "ALEX Jr";
+
+void Login();
 
 class OBJECT {
 private:
@@ -250,6 +252,7 @@ void ProcessPacket(char* ptr)
 		{
 		case 1:
 			cout << "이미 접속한 ID입니다\n";
+			Login();
 			break;
 		default:
 			break;
@@ -475,12 +478,8 @@ void send_packet(void *packet)
 	socket.send(packet, p[0], sent);
 }
 
-int main()
+void Login()
 {
-	wcout.imbue(locale("korean"));
-	sf::Socket::Status status = socket.connect("127.0.0.1", PORT_NUM);
-	socket.setBlocking(false);
-
 	int db_id = 0;
 	cout << "ID를 입력하세요 ";
 	cin >> db_id;
@@ -493,6 +492,27 @@ int main()
 	p.db_id = db_id;
 	strcpy_s(p.name, NickName);
 	send_packet(&p);
+}
+
+int main()
+{
+	wcout.imbue(locale("korean"));
+	sf::Socket::Status status = socket.connect("127.0.0.1", PORT_NUM);
+	socket.setBlocking(false);
+
+	Login();
+	/*int db_id = 0;
+	cout << "ID를 입력하세요 ";
+	cin >> db_id;
+	cout << "\n닉네임을 입력하세요 ";
+	cin >> NickName;*/
+
+	/*CS_LOGIN_PACKET p;
+	p.size = sizeof(CS_LOGIN_PACKET);
+	p.type = CS_LOGIN;
+	p.db_id = db_id;
+	strcpy_s(p.name, NickName);
+	send_packet(&p);*/
 
 	if (status != sf::Socket::Done) {
 		wcout << L"서버와 연결할 수 없습니다.\n";
