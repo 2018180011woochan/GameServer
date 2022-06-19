@@ -810,7 +810,13 @@ void roaming_npc(int npc_id, int c_id)
 
 	if (clients[npc_id].attack_type == ATTACKTYPE::ATTACKTYPE_AGRO)		// diablo
 	{
-
+		auto L = clients[npc_id].L;
+		clients[npc_id].vm_l.lock();
+		lua_getglobal(L, "event_boss_move");
+		int dir = rand() % 4;
+		lua_pushnumber(L, dir);
+		lua_pcall(L, 1, 0, 0);
+		clients[npc_id].vm_l.unlock();
 	}
 }
 
@@ -1120,6 +1126,61 @@ int API_get_y(lua_State* L)
 	return 1;
 }
 
+int API_BossMove(lua_State* L)
+{
+	int npc_id = lua_tonumber(L, -3);
+	int new_x = lua_tonumber(L, -2);
+	int new_y = lua_tonumber(L, -1);
+	lua_pop(L, 4);
+
+	unordered_set<int> old_vl;
+	for (int i = 0; i < MAX_USER; ++i) {
+		if (clients[i]._s_state != ST_INGAME) continue;
+		if (distance(npc_id, i) <= RANGE) old_vl.insert(i);
+	}
+
+	clients[npc_id].x = new_x;
+	clients[npc_id].y = new_y;
+
+	unordered_set<int> new_vl;
+	for (int i = 0; i < MAX_USER; ++i) {
+		if (clients[i]._s_state != ST_INGAME) continue;
+		if (distance(npc_id, i) <= RANGE) new_vl.insert(i);
+	}
+
+	for (auto p_id : new_vl) {
+		clients[p_id].vl.lock();
+		if (0 == clients[p_id].view_list.count(npc_id)) {
+			clients[p_id].view_list.insert(npc_id);
+			clients[p_id].vl.unlock();
+			clients[p_id].send_add_object(npc_id);
+		}
+		else {
+			clients[p_id].vl.unlock();
+			clients[p_id].send_move_packet(npc_id, 0);
+		}
+	}
+	for (auto p_id : old_vl) {
+		if (0 == new_vl.count(p_id)) {
+			clients[p_id].vl.lock();
+			if (clients[p_id].view_list.count(npc_id) == 1) {
+				clients[p_id].view_list.erase(npc_id);
+				clients[p_id].vl.unlock();
+				clients[p_id].send_remove_object(npc_id);
+			}
+			else
+				clients[p_id].vl.unlock();
+		}
+	}
+
+	return 1;
+}
+
+int API_ChasePlayer(lua_State* L)
+{
+	return 1;
+}
+
 void initialize_npc()
 {
 	for (int i = 0; i < NUM_NPC + MAX_USER; ++i)
@@ -1181,30 +1242,24 @@ void initialize_npc()
 		clients[npc_id].attack_type = ATTACKTYPE::ATTACKTYPE_AGRO;
 
 		strcpy_s(clients[npc_id]._name, "Diablo");
+
+		// lua
+		lua_State* L = luaL_newstate();
+		clients[npc_id].L = L;
+
+		luaL_openlibs(L);
+		luaL_loadfile(L, "diablo.lua");
+		lua_pcall(L, 0, 0, 0);
+
+		lua_getglobal(L, "set_object_id");
+		lua_pushnumber(L, npc_id);
+		lua_pcall(L, 1, 0, 0);
+
+		lua_register(L, "API_get_x", API_get_x);
+		lua_register(L, "API_get_y", API_get_y);
+		lua_register(L, "Boss_Move", API_BossMove);
 	}
 
-	//for (int i = 0; i < NUM_NPC; ++i) {
-	//	int npc_id = i + MAX_USER;
-	//	clients[npc_id]._s_state = ST_INGAME;
-	//	
-	//	strcpy_s(clients[npc_id]._name, "Wriath");
-	//	//sprintf_s(clients[npc_id]._name, "M-%d", npc_id);
-	//	/*lua_State* L = luaL_newstate();
-	//	clients[npc_id].L = L;
-
-	//	luaL_openlibs(L);
-	//	luaL_loadfile(L, "hello.lua");
-	//	lua_pcall(L, 0, 0, 0);
-
-	//	lua_getglobal(L, "set_object_id");
-	//	lua_pushnumber(L, npc_id);
-	//	lua_pcall(L, 1, 0, 0);
-
-	//	lua_register(L, "API_chat", API_SendMessage);
-	//	lua_register(L, "API_get_x", API_get_x);
-	//	lua_register(L, "API_get_y", API_get_y);
-	//	lua_register(L, "API_run", API_Run);*/
-	//}
 	cout << "NPC Initialization complete.\n";
 }
 
