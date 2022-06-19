@@ -48,9 +48,9 @@ SQLLEN cbuser_id = 0, cbrace = 0, cbuser_xpos = 0, cbuser_ypos = 0, cbuser_level
 
 bool isAllowAccess(int clientid, int cid);
 void Save_UserInfo(int db_id, int c_id);
-void roaming_npc(int npc_id);
-void fix_npc(int npc_id);
-void AttackNPC(int npc_id);
+void roaming_npc(int npc_id, int c_id);
+void fix_npc(int npc_id, int c_id);
+void AttackNPC(int npc_id, int c_id);
 void do_timer();
 
 enum EVENT_TYPE { EV_MOVE, EV_HEAL, EV_ATTACK};
@@ -126,6 +126,7 @@ public:
 	bool isPlay;
 	ATTACKTYPE _attacktype;
 	MOVETYPE _movetype;
+	short _target_id;
 
 	chrono::system_clock::time_point next_move_time;
 	int		_prev_remain;
@@ -151,6 +152,7 @@ public:
 		isNpcRun = false;
 		isNpcDead = false;
 		isPlay = false;
+		_target_id = 10000;
 	}
 
 	~SESSION() {}
@@ -418,11 +420,14 @@ void process_packet(int c_id, char* packet)
 
 		for (int i = 0; i < NUM_NPC; ++i) {
 			int npc_id = MAX_USER + i;
-			if (distance(npc_id, c_id) < RANGE) {
-				auto ex_over = new OVER_EXP;
-				ex_over->_comp_type = OP_RANDOM_MOVE;
-				ex_over->target_id = c_id;
-				PostQueuedCompletionStatus(g_h_iocp, 1, npc_id, &ex_over->_over);
+			if (!clients[npc_id].isNpcDead)
+			{
+				if (distance(npc_id, c_id) < RANGE) {
+					auto ex_over = new OVER_EXP;
+					ex_over->_comp_type = OP_RANDOM_MOVE;
+					ex_over->target_id = c_id;
+					PostQueuedCompletionStatus(g_h_iocp, 1, npc_id, &ex_over->_over);
+				}
 			}
 		}
 
@@ -434,8 +439,9 @@ void process_packet(int c_id, char* packet)
 			if (clients[i].isNpcDead)
 				continue;
 			if (clients[c_id].x == clients[i].x) {
-				if (abs(clients[c_id].y - clients[i].y) == 1) {	// ªÛ«œ
+				if (abs(clients[c_id].y - clients[i].y) <= 1) {	// ªÛ«œ
 					clients[i].hp -= clients[c_id].level * 50;
+					clients[i]._target_id = c_id;
 					SC_STAT_CHANGE_PACKET Monsterscp;
 					Monsterscp.size = sizeof(SC_STAT_CHANGE_PACKET);
 					Monsterscp.type = SC_STAT_CHANGE;
@@ -488,8 +494,9 @@ void process_packet(int c_id, char* packet)
 				}
 			}
 			if (clients[c_id].y == clients[i].y) {
-				if (abs(clients[c_id].x - clients[i].x) == 1) {	// ¡¬øÏ
+				if (abs(clients[c_id].x - clients[i].x) <= 1) {	// ¡¬øÏ
 					clients[i].hp -= clients[c_id].level * 50;
+					clients[i]._target_id = c_id;
 					SC_STAT_CHANGE_PACKET Monsterscp;
 					Monsterscp.size = sizeof(SC_STAT_CHANGE_PACKET);
 					Monsterscp.type = SC_STAT_CHANGE;
@@ -647,10 +654,10 @@ void do_worker()
 		case OP_RANDOM_MOVE: {
 			int npc_id = static_cast<int>(key);
 			if (clients[npc_id].move_type == MOVETYPE::MOVETYPE_ROAMING)
-				roaming_npc(npc_id);
+				roaming_npc(npc_id, ex_over->target_id);
 			else
-				fix_npc(npc_id);
-			AttackNPC(npc_id);
+				fix_npc(npc_id, ex_over->target_id);
+			//AttackNPC(npc_id);
 			//auto L = clients[client_id].L;
 			//clients[client_id].vm_l.lock();
 			//lua_getglobal(L, "event_player_move");
@@ -664,27 +671,86 @@ void do_worker()
 	} // WHILE
 }
 
-void fix_npc(int npc_id)
+void chase_player(int npc_id, int c_id)
+{
+	short x = clients[npc_id].x;
+	short y = clients[npc_id].y;
+
+	if (clients[c_id].x < x)
+	{
+		if (clients[c_id].y < y)
+		{
+			switch (rand() % 2) {
+			case 0: if (y > 0) y--; break;
+			case 1: if (x > 0) x--; break;
+			}
+		}
+		else if (clients[c_id].y > y)
+		{
+			switch (rand() % 2) {
+			case 0: if (y < W_HEIGHT - 1) y++; break;
+			case 1: if (x > 0) x--; break;
+			}
+		}
+		else
+			if (x > 0) x--;
+	}
+	else if (clients[c_id].x > x)
+	{
+		if (clients[c_id].y < y)
+		{
+			switch (rand() % 2) {
+			case 0: if (y > 0) y--; break;
+			case 1: if (x < W_WIDTH - 1) x++; break;
+			}
+		}
+		else if (clients[c_id].y > y)
+		{
+			switch (rand() % 2) {
+			case 0: if (y < W_HEIGHT - 1) y++; break;
+			case 1: if (x < W_WIDTH - 1) x++; break;
+			}
+		}
+		else
+			if (x < W_WIDTH - 1) x++;
+	}
+	else
+	{
+		if (clients[c_id].y < y)
+		{
+			if (y > 0) y--;
+		}
+		else if (clients[c_id].y > y)
+			if (y < W_HEIGHT - 1) y++;
+	}
+
+	clients[npc_id].x = x;
+	clients[npc_id].y = y;
+}
+
+void fix_npc(int npc_id, int c_id)
 {
 	if (clients[npc_id].attack_type == ATTACKTYPE::ATTACKTYPE_PEACE)	// skelton
 	{
-
+		if (clients[npc_id]._target_id != 10000)
+			chase_player(npc_id, clients[npc_id]._target_id);
 	}
 	if (clients[npc_id].attack_type == ATTACKTYPE::ATTACKTYPE_AGRO)		// wraith
 	{
-		for (int i = 0; i < MAX_USER; ++i) {
-			if (clients[i]._s_state != ST_INGAME) continue;
-			if (distance(i, npc_id) < 3)
+		//for (int i = 0; i < MAX_USER; ++i) {
+		//	if (clients[i]._s_state != ST_INGAME) continue;
+			if (distance(c_id, npc_id) < 3)
 			{
-				short target_x = clients[i].x;
-				short target_y = clients[i].y;
-				int a = 10;
+				if (clients[npc_id]._target_id == 10000)
+					clients[npc_id]._target_id = c_id;
 			}
-		}
+			if (clients[npc_id]._target_id != 10000)
+				chase_player(npc_id, clients[npc_id]._target_id);
+		//}
 	}
 }
 
-void roaming_npc(int npc_id)
+void roaming_npc(int npc_id, int c_id)
 {
 	short x = clients[npc_id].x;
 	short y = clients[npc_id].y;
@@ -735,7 +801,7 @@ void roaming_npc(int npc_id)
 	}
 }
 
-void AttackNPC(int npc_id)
+void AttackNPC(int npc_id, int c_id)
 {
 	for (int i = 0; i < MAX_USER; ++i) {
 		if (clients[i]._s_state != ST_INGAME) continue;
