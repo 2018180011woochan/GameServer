@@ -698,6 +698,12 @@ void chase_player(int npc_id, int c_id)
 	short x = clients[npc_id].x;
 	short y = clients[npc_id].y;
 
+	unordered_set<int> old_vl;
+	for (int i = 0; i < MAX_USER; ++i) {
+		if (clients[i]._s_state != ST_INGAME) continue;
+		if (distance(npc_id, i) <= RANGE) old_vl.insert(i);
+	}
+
 	if (clients[c_id].x < x)
 	{
 		if (clients[c_id].y < y)
@@ -748,6 +754,37 @@ void chase_player(int npc_id, int c_id)
 
 	clients[npc_id].x = x;
 	clients[npc_id].y = y;
+
+	unordered_set<int> new_vl;
+	for (int i = 0; i < MAX_USER; ++i) {
+		if (clients[i]._s_state != ST_INGAME) continue;
+		if (distance(npc_id, i) <= RANGE) new_vl.insert(i);
+	}
+
+	for (auto p_id : new_vl) {
+		clients[p_id].vl.lock();
+		if (0 == clients[p_id].view_list.count(npc_id)) {
+			clients[p_id].view_list.insert(npc_id);
+			clients[p_id].vl.unlock();
+			clients[p_id].send_add_object(npc_id);
+		}
+		else {
+			clients[p_id].vl.unlock();
+			clients[p_id].send_move_packet(npc_id, 0);
+		}
+	}
+	for (auto p_id : old_vl) {
+		if (0 == new_vl.count(p_id)) {
+			clients[p_id].vl.lock();
+			if (clients[p_id].view_list.count(npc_id) == 1) {
+				clients[p_id].view_list.erase(npc_id);
+				clients[p_id].vl.unlock();
+				clients[p_id].send_remove_object(npc_id);
+			}
+			else
+				clients[p_id].vl.unlock();
+		}
+	}
 }
 
 void fix_npc(int npc_id, int c_id)
@@ -885,7 +922,8 @@ void AttackNPC(int npc_id, int c_id)
 				cout << clients[npc_id]._name << "[" << clients[npc_id]._id << "] " << "의 공격으로 "
 					<< clients[i]._name << "의 HP가 " << clients[i].hp << "가 되었습니다.\n";
 				
-				clients[i].do_send(&scp);
+				for (int& connected_id : ConnectedPlayer)
+					clients[connected_id].do_send(&scp);
 			}
 		}
 
