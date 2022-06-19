@@ -399,6 +399,8 @@ void process_packet(int c_id, char* packet)
 		}
 
 		for (auto p_id : new_vl) {
+			if (clients[p_id].isNpcDead)
+				continue;
 			if (0 == clients[c_id].view_list.count(p_id)) {
 				clients[c_id].view_list.insert(p_id);
 				clients[c_id].send_add_object(p_id);
@@ -737,16 +739,13 @@ void fix_npc(int npc_id, int c_id)
 	}
 	if (clients[npc_id].attack_type == ATTACKTYPE::ATTACKTYPE_AGRO)		// wraith
 	{
-		//for (int i = 0; i < MAX_USER; ++i) {
-		//	if (clients[i]._s_state != ST_INGAME) continue;
-			if (distance(c_id, npc_id) < 3)
-			{
-				if (clients[npc_id]._target_id == 10000)
-					clients[npc_id]._target_id = c_id;
-			}
-			if (clients[npc_id]._target_id != 10000)
-				chase_player(npc_id, clients[npc_id]._target_id);
-		//}
+		if (distance(c_id, npc_id) < 3)
+		{
+			if (clients[npc_id]._target_id == 10000)
+				clients[npc_id]._target_id = c_id;
+		}
+		if (clients[npc_id]._target_id != 10000)
+			chase_player(npc_id, clients[npc_id]._target_id);
 	}
 }
 
