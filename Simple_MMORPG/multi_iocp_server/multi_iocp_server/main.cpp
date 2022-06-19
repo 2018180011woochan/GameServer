@@ -57,6 +57,8 @@ enum EVENT_TYPE { EV_MOVE, EV_HEAL, EV_ATTACK};
 enum SESSION_STATE { ST_FREE, ST_ACCEPTED, ST_INGAME, ST_ACTIVE, ST_SLEEP};
 enum COMP_TYPE { OP_ACCEPT, OP_RECV, OP_SEND, OP_RANDOM_MOVE };
 
+vector<int> ConnectedPlayer;
+
 struct TIMER_EVENT {
 	int object_id;
 	EVENT_TYPE ev;
@@ -329,6 +331,7 @@ void process_packet(int c_id, char* packet)
 		clients[c_id]._s_state = ST_INGAME;
 		clients[c_id]._sl.unlock();
 
+		ConnectedPlayer.push_back(c_id);
 		//clients[c_id].x = rand() % W_WIDTH;
 		//clients[c_id].y = rand() % W_HEIGHT;
 
@@ -453,8 +456,9 @@ void process_packet(int c_id, char* packet)
 					Monsterscp.id = i;
 					Monsterscp.level = clients[i].level;
 
-					clients[c_id].do_send(&Monsterscp);
-
+					for (int& connected_id : ConnectedPlayer)
+						clients[connected_id].do_send(&Monsterscp);
+					
 					cout << clients[c_id]._name << "가 " << clients[i]._name << "["
 						<< clients[i]._id << "] " << "를 공격하여 " << clients[c_id].level * 50
 						<< "의 데미지를 입혔습니다\n";
@@ -463,7 +467,9 @@ void process_packet(int c_id, char* packet)
 						p.size = sizeof(SC_REMOVE_OBJECT_PACKET);
 						p.type = SC_REMOVE_OBJECT;
 						p.id = i;
-						clients[c_id].do_send(&p);				// 나중에는 접속한 모든 플레이어한테 보내야할듯
+						//clients[c_id].do_send(&p);				// 나중에는 접속한 모든 플레이어한테 보내야할듯
+						for (int& connected_id : ConnectedPlayer)
+							clients[connected_id].do_send(&p);
 
 						SC_STAT_CHANGE_PACKET scp;
 						scp.size = sizeof(SC_STAT_CHANGE_PACKET);
@@ -491,7 +497,10 @@ void process_packet(int c_id, char* packet)
 						scp.hpmax = clients[c_id].hpmax;
 						scp.exp = clients[c_id].exp;
 
-						clients[c_id].do_send(&scp);
+						//clients[c_id].do_send(&scp);
+						for (int& connected_id : ConnectedPlayer)
+							clients[connected_id].do_send(&scp);
+
 						cout << clients[c_id]._name << "가 " << clients[i]._name << "["
 							<< clients[i]._id << "] " << "를 무찔러 " << rewardEXP
 							<< "의 경험치를 얻었습니다\n";
@@ -511,7 +520,8 @@ void process_packet(int c_id, char* packet)
 					Monsterscp.id = i;
 					Monsterscp.level = clients[i].level;
 
-					clients[c_id].do_send(&Monsterscp);
+					for (int& connected_id : ConnectedPlayer)
+						clients[connected_id].do_send(&Monsterscp);
 
 					cout << clients[c_id]._name << "가 " << clients[i]._name << "["
 						<< clients[i]._id << "] " << "를 공격하여 " << clients[c_id].level * 50
@@ -521,7 +531,9 @@ void process_packet(int c_id, char* packet)
 						p.size = sizeof(SC_REMOVE_OBJECT_PACKET);
 						p.type = SC_REMOVE_OBJECT;
 						p.id = i;
-						clients[c_id].do_send(&p);				// 나중에는 접속한 모든 플레이어한테 보내야할듯
+						//clients[c_id].do_send(&p);				// 나중에는 접속한 모든 플레이어한테 보내야할듯
+						for (int& connected_id : ConnectedPlayer)
+							clients[connected_id].do_send(&p);
 
 						SC_STAT_CHANGE_PACKET scp;
 						scp.size = sizeof(SC_STAT_CHANGE_PACKET);
@@ -546,7 +558,9 @@ void process_packet(int c_id, char* packet)
 						scp.hpmax = clients[c_id].hpmax;
 						scp.exp = clients[c_id].exp;
 
-						clients[c_id].do_send(&scp);
+						//clients[c_id].do_send(&scp);
+						for (int& connected_id : ConnectedPlayer)
+							clients[connected_id].do_send(&scp);
 						cout << clients[c_id]._name << "가 " << clients[i]._name << "["
 							<< clients[i]._id << "] " << "를 무찔러 " << rewardEXP
 							<< "의 경험치를 얻었습니다\n";
@@ -1372,6 +1386,8 @@ int main()
 	SOCKADDR_IN cl_addr;
 	int addr_size = sizeof(cl_addr);
 	int client_id = 0;
+
+	ConnectedPlayer.reserve(10000);
 
 	g_h_iocp = CreateIoCompletionPort(INVALID_HANDLE_VALUE, 0, 0, 0);
 	CreateIoCompletionPort(reinterpret_cast<HANDLE>(g_s_socket), g_h_iocp, 9999, 0);
