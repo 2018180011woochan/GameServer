@@ -53,6 +53,8 @@ private:
 	sf::Sprite m_sprite;	
 	sf::Text m_name;
 	sf::Text m_level;
+
+	sf::Text ui_m_name;
 public:
 	int id;
 	int m_x, m_y;
@@ -61,12 +63,13 @@ public:
 	int hp, hpmax;
 	vector<int> my_party;
 	sf::Sprite m_HPBar;
+	sf::Sprite ui_m_HPBar;
 
 	OBJECT(sf::Texture& t, int x, int y, int x2, int y2) {
 		m_showing = false;
 		m_sprite.setTexture(t);
 		m_sprite.setTextureRect(sf::IntRect(x, y, x2, y2));
-		set_name("NONAME");
+		set_name("NONAME", false);
 		set_level(0);
 	}
 	OBJECT(sf::Texture& t, int x, int y, int x2, int y2, sf::Texture& hpbar, int tx, int ty, int tx2, int ty2) {
@@ -75,7 +78,9 @@ public:
 		m_sprite.setTextureRect(sf::IntRect(x, y, x2, y2));
 		m_HPBar.setTexture(hpbar);
 		m_HPBar.setTextureRect(sf::IntRect(tx, ty, tx2, ty2));
-		set_name("NONAME");
+		ui_m_HPBar.setTexture(hpbar);
+		ui_m_HPBar.setTextureRect(sf::IntRect(tx, ty, tx2, ty2));
+		set_name("NONAME", false);
 		set_level(0);
 	}
 	OBJECT() {
@@ -121,8 +126,31 @@ public:
 		m_name.setPosition(rx, ry - 40);
 		g_window->draw(m_name);
 
-		m_level.setPosition(rx - 40, ry - 20);
+		m_level.setPosition(rx - 40, ry - 40);
 		g_window->draw(m_level);
+
+		
+	}
+	void draw_ui()
+	{
+		if (false == m_showing) return;
+		float rx = (m_x - g_left_x) * 65.0f + 8;
+		float ry = (m_y - g_top_y) * 65.0f + 8;
+		m_sprite.setPosition(rx, ry);
+		g_window->draw(m_sprite);
+		m_HPBar.setPosition(rx, ry);
+		g_window->draw(m_HPBar);
+
+		m_name.setPosition(rx, ry - 40);
+		g_window->draw(m_name);
+
+		m_level.setPosition(rx - 40, ry - 40);
+		g_window->draw(m_level);
+
+		ui_m_name.setPosition(my_party.size() * 50, 10);
+		g_window->draw(ui_m_name);
+		ui_m_HPBar.setPosition(my_party.size() * 50, 50);
+		g_window->draw(ui_m_HPBar);
 	}
 	void idraw()
 	{
@@ -137,11 +165,18 @@ public:
 		return m_showing;
 	}
 
-	void set_name(const char str[]) {
+	void set_name(const char str[], bool _ui) {
 		m_name.setFont(g_font);
 		m_name.setString(str);
 		m_name.setFillColor(sf::Color(255, 255, 0));
 		m_name.setStyle(sf::Text::Bold);
+
+		if (_ui) {
+			ui_m_name.setFont(g_font);
+			ui_m_name.setString(str);
+			ui_m_name.setFillColor(sf::Color(255, 255, 0));
+			ui_m_name.setStyle(sf::Text::Bold);
+		}
 	}
 
 	void set_level(const char level[]){
@@ -189,6 +224,7 @@ sf::Texture* diablo;
 sf::Texture* AttackSource;
 sf::Texture* HPBar;
 sf::Texture* Chatimage;
+sf::Texture* CharPicture;
 
 void client_initialize()
 {
@@ -201,6 +237,7 @@ void client_initialize()
 	AttackSource = new sf::Texture;
 	HPBar = new sf::Texture;
 	Chatimage = new sf::Texture;
+	CharPicture = new sf::Texture;
 
 	board->loadFromFile("Texture/Map/map.bmp");
 	pieces->loadFromFile("Texture/User/player.png");
@@ -211,6 +248,7 @@ void client_initialize()
 	AttackSource->loadFromFile("Texture/UserAttack/fire.png");
 	HPBar->loadFromFile("Texture/User/HPBar.bmp");
 	Chatimage->loadFromFile("Texture/User/chaticon.png");
+	CharPicture->loadFromFile("Texture/User/CharPicture.png");
 
 	MapObj = OBJECT{ *board, 0, 0, 2000, 2000 };
 
@@ -248,6 +286,7 @@ void client_finish()
 	delete diablo;
 	delete HPBar;
 	delete Chatimage;
+	delete CharPicture;
 }
 
 void ProcessPacket(char* ptr)
@@ -265,7 +304,8 @@ void ProcessPacket(char* ptr)
 		avatar.hpmax = packet->hpmax;
 		avatar.level = packet->level;
 		avatar.exp = packet->exp;
-		avatar.set_name(NickName);
+		
+		avatar.set_name(NickName, true);
 
 		avatar.my_party.push_back(avatar.id);
 
@@ -299,7 +339,7 @@ void ProcessPacket(char* ptr)
 
 		if (id < MAX_USER) {
 			players[id].move(my_packet->x, my_packet->y);
-			players[id].set_name(my_packet->name);
+			players[id].set_name(my_packet->name, false);
 
 			char lev[10];
 			sprintf_s(lev, "%d", my_packet->level);
@@ -327,7 +367,7 @@ void ProcessPacket(char* ptr)
 			char lev[10];
 			sprintf_s(lev, "%d", my_packet->level);
 			npcs[id - MAX_USER].set_level(lev);
-			npcs[id - MAX_USER].set_name(my_packet->name);
+			npcs[id - MAX_USER].set_name(my_packet->name, false);
 			npcs[id - MAX_USER].set_info(my_packet->level, my_packet->hp, my_packet->hpmax);
 
 			if (avatar.level < npcs[id - MAX_USER].level)
@@ -385,7 +425,8 @@ void ProcessPacket(char* ptr)
 			
 			int curhp = 89 * avatar.hp / avatar.hpmax;
 
-			avatar.m_HPBar.setTextureRect(sf::IntRect(0, 0, curhp, 10));			
+			avatar.m_HPBar.setTextureRect(sf::IntRect(0, 0, curhp, 10));
+			avatar.ui_m_HPBar.setTextureRect(sf::IntRect(0, 0, curhp, 10));
 		}
 		else if (my_packet->id < MAX_USER) {
 			players[my_packet->id].level = my_packet->level;
@@ -514,7 +555,7 @@ void client_main()
 
 		}
 
-	avatar.draw();
+	avatar.draw_ui();
 	for (int i = 0; i < 8; ++i)
 		PlayerSkill[i].idraw();
 
