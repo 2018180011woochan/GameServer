@@ -10,6 +10,7 @@
 #include <queue>
 #include <chrono>
 #include <string>
+#include <atomic>
 
 #include <windows.h>  
 #include <locale.h>
@@ -46,13 +47,20 @@ SQLLEN cbuser_id = 0, cbrace = 0, cbuser_xpos = 0, cbuser_ypos = 0, cbuser_level
 /// //////////////////////////////
 
 bool isAllowAccess(int clientid, int cid);
-void SavePos(int clientid, int cid);
 void Save_UserInfo(int db_id, int c_id);
+void roaming_npc(int npc_id);
+void fix_npc(int npc_id);
+void AttackNPC(int npc_id);
+void do_timer();
 
-enum EVENT_TYPE { EV_MOVE, EV_HEAL, EV_ATTACK };
+enum EVENT_TYPE { EV_MOVE, EV_HEAL, EV_ATTACK};
+enum SESSION_STATE { ST_FREE, ST_ACCEPTED, ST_INGAME, ST_ACTIVE, ST_SLEEP};
+enum COMP_TYPE { OP_ACCEPT, OP_RECV, OP_SEND, OP_RANDOM_MOVE };
+
 struct TIMER_EVENT {
 	int object_id;
 	EVENT_TYPE ev;
+	COMP_TYPE comp_type;
 	chrono::system_clock::time_point act_time;
 	int target_id;
 
@@ -60,13 +68,11 @@ struct TIMER_EVENT {
 	{
 		return (act_time > _Left.act_time);
 	}
-
 };
 
 priority_queue<TIMER_EVENT> timer_queue;
 mutex timer_l;
 
-enum COMP_TYPE { OP_ACCEPT, OP_RECV, OP_SEND, OP_PLAYER_MOVE };
 class OVER_EXP {
 public:
 	WSAOVERLAPPED _over;
@@ -91,14 +97,13 @@ public:
 	}
 };
 
-enum SESSION_STATE { ST_FREE, ST_ACCEPTED, ST_INGAME};
-
 class SESSION {
 	OVER_EXP _recv_over;
 
 public:
 	mutex	_sl;
 	SESSION_STATE _s_state;
+	EVENT_TYPE _ev;
 	//int _clientid;
 	SOCKET _socket;
 	int		_id;
@@ -119,6 +124,8 @@ public:
 	bool isNpcRun;
 	bool isNpcDead;
 	bool isPlay;
+	ATTACKTYPE _attacktype;
+	MOVETYPE _movetype;
 
 	chrono::system_clock::time_point next_move_time;
 	int		_prev_remain;
@@ -190,15 +197,23 @@ array<SESSION, MAX_USER + NUM_NPC> clients;
 HANDLE g_h_iocp;
 SOCKET g_s_socket;
 
-void add_timer(int obj_id, int act_time, EVENT_TYPE e_type, int target_id)
+void add_timer(int obj_id, int act_time, COMP_TYPE e_type, int target_id)
 {
 	using namespace chrono;
 	TIMER_EVENT ev;
 	ev.act_time = system_clock::now() + milliseconds(act_time);
 	ev.object_id = obj_id;
-	ev.ev = e_type;
+	ev.comp_type = e_type;
 	ev.target_id = target_id;
 	timer_queue.push(ev);
+}
+
+void activate_npc(int id)
+{
+	clients[id]._s_state = ST_ACTIVE;
+	//SESSION_STATE old_status = ST_SLEEP;
+	//if (true == atomic_compare_exchange_strong(&clients[id]._s_state, &old_status, ST_ACTIVE))
+	add_timer(id, 1000, OP_RANDOM_MOVE, 0);
 }
 
 int distance(int a, int b)
@@ -253,7 +268,6 @@ void SESSION::send_chat_packet(int c_id, const char *mess)
 	do_send(&p);
 }
 
-
 void disconnect(int c_id);
 int get_new_client_id()
 {
@@ -268,8 +282,6 @@ int get_new_client_id()
 	}
 	return -1;
 }
-
-
 
 void process_packet(int c_id, char* packet)
 {
@@ -408,14 +420,13 @@ void process_packet(int c_id, char* packet)
 			int npc_id = MAX_USER + i;
 			if (distance(npc_id, c_id) < RANGE) {
 				auto ex_over = new OVER_EXP;
-				ex_over->_comp_type = OP_PLAYER_MOVE;
+				ex_over->_comp_type = OP_RANDOM_MOVE;
 				ex_over->target_id = c_id;
 				PostQueuedCompletionStatus(g_h_iocp, 1, npc_id, &ex_over->_over);
 			}
 		}
 
 		Save_UserInfo(clients[c_id]._db_id, c_id);
-
 		break;
 	}
 	case CS_ATTACK: {
@@ -633,7 +644,13 @@ void do_worker()
 			if (0 == num_bytes) disconnect(client_id);
 			delete ex_over;
 			break;
-		case OP_PLAYER_MOVE: {
+		case OP_RANDOM_MOVE: {
+			int npc_id = static_cast<int>(key);
+			if (clients[npc_id].move_type == MOVETYPE::MOVETYPE_ROAMING)
+				roaming_npc(npc_id);
+			else
+				fix_npc(npc_id);
+			AttackNPC(npc_id);
 			//auto L = clients[client_id].L;
 			//clients[client_id].vm_l.lock();
 			//lua_getglobal(L, "event_player_move");
@@ -647,7 +664,27 @@ void do_worker()
 	} // WHILE
 }
 
-void move_npc(int npc_id)
+void fix_npc(int npc_id)
+{
+	if (clients[npc_id].attack_type == ATTACKTYPE::ATTACKTYPE_PEACE)	// skelton
+	{
+
+	}
+	if (clients[npc_id].attack_type == ATTACKTYPE::ATTACKTYPE_AGRO)		// wraith
+	{
+		for (int i = 0; i < MAX_USER; ++i) {
+			if (clients[i]._s_state != ST_INGAME) continue;
+			if (distance(i, npc_id) < 3)
+			{
+				short target_x = clients[i].x;
+				short target_y = clients[i].y;
+				int a = 10;
+			}
+		}
+	}
+}
+
+void roaming_npc(int npc_id)
 {
 	short x = clients[npc_id].x;
 	short y = clients[npc_id].y;
@@ -716,9 +753,26 @@ void AttackNPC(int npc_id)
 				scp.exp = clients[i].exp;
 				scp.level = clients[i].level;
 
-				cout << clients[npc_id]._name << "[" << clients[i]._id << "] " << "의 공격으로 "
+				if (clients[i].hp < 0)	// 플레이어 사망
+				{
+					cout << clients[npc_id]._name << "[" << clients[npc_id]._id << "] " << "의 공격으로 "
+						<< clients[i]._name << "가 사망하였습니다\n";
+					clients[i].hp = clients[i].hpmax;
+					clients[i].exp = clients[i].exp / 2;
+					scp.hp = clients[i].hp;
+					scp.exp = clients[i].exp;
+					clients[i].do_send(&scp);
+
+					clients[i].x = 0;
+					clients[i].y = 0;
+					clients[i].send_move_packet(i, 0);
+					break;
+				}
+
+				cout << clients[npc_id]._name << "[" << clients[npc_id]._id << "] " << "의 공격으로 "
 					<< clients[i]._name << "의 HP가 " << clients[i].hp << "가 되었습니다.\n";
 
+				
 				clients[i].do_send(&scp);
 			}
 		}
@@ -737,7 +791,23 @@ void AttackNPC(int npc_id)
 				scp.exp = clients[i].exp;
 				scp.level = clients[i].level;
 
-				cout << clients[npc_id]._name << "[" << clients[i]._id << "] " << "의 공격으로 "
+				if (clients[i].hp < 0)	// 플레이어 사망
+				{
+					cout << clients[npc_id]._name << "[" << clients[npc_id]._id << "] " << "의 공격으로 "
+						<< clients[i]._name << "가 사망하였습니다\n";
+					clients[i].hp = clients[i].hpmax;
+					clients[i].exp = clients[i].exp / 2;
+					scp.hp = clients[i].hp;
+					scp.exp = clients[i].exp;
+					clients[i].do_send(&scp);
+
+					clients[i].x = 0;
+					clients[i].y = 0;
+					clients[i].send_move_packet(i, 0);
+					break;
+				}
+
+				cout << clients[npc_id]._name << "[" << clients[npc_id]._id << "] " << "의 공격으로 "
 					<< clients[i]._name << "의 HP가 " << clients[i].hp << "가 되었습니다.\n";
 
 				clients[i].do_send(&scp);
@@ -753,7 +823,7 @@ void do_ai_ver_1()
 		for (int i = 0; i < NUM_NPC; ++i) {
 			int npc_id = i + MAX_USER;
 			if (start_t > clients[npc_id].next_move_time) {
-				move_npc(npc_id);
+				//move_npc(npc_id);
 				//AttackNPC(npc_id);
 				clients[npc_id].next_move_time = start_t + chrono::seconds(1);
 			}
@@ -767,48 +837,16 @@ void do_ai_ver_heat_beat()
 		auto start_t = chrono::system_clock::now();
 		for (int i = 0; i < NUM_NPC; ++i) {
 			int npc_id = i + MAX_USER;
-			//if (!clients[npc_id].isNpcRun)
-			move_npc(npc_id);
+			/*move_npc(npc_id);
+			AttackNPC(npc_id);*/
+			//do_timer();
 		}
-
+		
 		auto end_t = chrono::system_clock::now();
 		auto ai_t = end_t - start_t;
-		cout << "AI time : " << chrono::duration_cast<chrono::milliseconds>(ai_t).count();
-		cout << "ms\n";
 		this_thread::sleep_until(start_t + chrono::seconds(1));
 	}
 
-}
-
-void SavePos(int clientid, int cid)
-{
-	///// //////////////////////////////////////////////////////////////////////////////
-	retcode = SQLAllocHandle(SQL_HANDLE_STMT, hdbc, &hstmt);
-
-	wstring c_id = to_wstring(clientid);
-	wstring xpos = to_wstring(clients[cid].x);
-	wstring ypos = to_wstring(clients[cid].y);
-
-	wstring storedProcedure = L"EXEC updatepos ";
-	storedProcedure += c_id;
-	storedProcedure += L", ";
-	storedProcedure += xpos;
-	storedProcedure += L", ";
-	storedProcedure += ypos;
-
-	retcode = SQLExecDirect(hstmt, (SQLWCHAR*)storedProcedure.c_str(), SQL_NTS);
-
-	if (retcode == SQL_SUCCESS || retcode == SQL_SUCCESS_WITH_INFO) {
-
-		retcode = SQLBindCol(hstmt, 1, SQL_C_LONG, &user_xpos, 10, &cbuser_xpos);
-		retcode = SQLBindCol(hstmt, 2, SQL_C_LONG, &user_ypos, 10, &cbuser_ypos);
-
-		for (int i = 0; ; i++) {
-			retcode = SQLFetch(hstmt);
-			break;
-		}
-	}
-	///// ////////////////////////////////////////////////////////////////////////////////////////
 }
 
 void ShowError(SQLHANDLE hHandle, SQLSMALLINT hType, RETCODE RetCode)
@@ -1009,6 +1047,7 @@ void initialize_npc()
 	for (int i = 0; i < NUM_NPC + MAX_USER; ++i)
 		clients[i]._id = i;
 	cout << "NPC initialize Begin.\n";
+
 	for (int i = MAX_USER; i < MAX_USER + 50000 ; ++ i)
 	{
 		// Skeleton
@@ -1018,6 +1057,8 @@ void initialize_npc()
 		clients[npc_id].level = 1;
 		clients[npc_id].hpmax = clients[npc_id].level * 100;
 		clients[npc_id].hp = clients[npc_id].hpmax;
+		clients[npc_id].move_type = MOVETYPE::MOVETYPE_FIX;
+		clients[npc_id].attack_type = ATTACKTYPE::ATTACKTYPE_PEACE;
 
 		strcpy_s(clients[npc_id]._name, "Skeleton");
 	}
@@ -1030,6 +1071,8 @@ void initialize_npc()
 		clients[npc_id].level = 2;
 		clients[npc_id].hpmax = clients[npc_id].level * 100;
 		clients[npc_id].hp = clients[npc_id].hpmax;
+		clients[npc_id].move_type = MOVETYPE::MOVETYPE_FIX;
+		clients[npc_id].attack_type = ATTACKTYPE::ATTACKTYPE_AGRO;
 
 		strcpy_s(clients[npc_id]._name, "Wriath");
 	}
@@ -1042,6 +1085,8 @@ void initialize_npc()
 		clients[npc_id].level = 3;
 		clients[npc_id].hpmax = clients[npc_id].level * 100;
 		clients[npc_id].hp = clients[npc_id].hpmax;
+		clients[npc_id].move_type = MOVETYPE::MOVETYPE_ROAMING;
+		clients[npc_id].attack_type = ATTACKTYPE::ATTACKTYPE_PEACE;
 
 		strcpy_s(clients[npc_id]._name, "Devil");
 	}
@@ -1054,9 +1099,12 @@ void initialize_npc()
 		clients[npc_id].level = 4;
 		clients[npc_id].hpmax = clients[npc_id].level * 100;
 		clients[npc_id].hp = clients[npc_id].hpmax;
+		clients[npc_id].move_type = MOVETYPE::MOVETYPE_ROAMING;
+		clients[npc_id].attack_type = ATTACKTYPE::ATTACKTYPE_AGRO;
 
 		strcpy_s(clients[npc_id]._name, "Diablo");
 	}
+
 	//for (int i = 0; i < NUM_NPC; ++i) {
 	//	int npc_id = i + MAX_USER;
 	//	clients[npc_id]._s_state = ST_INGAME;
@@ -1084,7 +1132,19 @@ void initialize_npc()
 
 void do_timer()
 {
+	while (true)
+	{
+		this_thread::sleep_for(1ms); //Sleep(1);
 
+		for (int i = 0; i < NUM_NPC; ++i) {
+			int npc_id = MAX_USER + i;
+			OVER_EXP* over = new OVER_EXP();
+			over->_comp_type = COMP_TYPE::OP_RANDOM_MOVE;
+			PostQueuedCompletionStatus(g_h_iocp, 1, npc_id, &over->_over);
+			//random_move_npc(ev.obj_id);
+			//add_timer(ev.obj_id, ev.event_id, 1000);
+		}
+	}
 }
 
 void Save_UserInfo(int db_id, int c_id)
@@ -1183,8 +1243,8 @@ int main()
 	for (int i = 0; i < 6; ++i)
 		worker_threads.emplace_back(do_worker);
 
-	thread ai_thread{ do_ai_ver_1 };
-	ai_thread.join();
+	//thread ai_thread{ do_timer };
+	//ai_thread.join();
 	
 	for (auto& th : worker_threads)
 		th.join();

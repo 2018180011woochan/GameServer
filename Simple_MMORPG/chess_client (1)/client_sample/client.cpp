@@ -336,9 +336,7 @@ void ProcessPacket(char* ptr)
 			
 			int curhp = 89 * avatar.hp / avatar.hpmax;
 
-			avatar.m_HPBar.setTextureRect(sf::IntRect(0, 0, curhp, 10));
-
-			
+			avatar.m_HPBar.setTextureRect(sf::IntRect(0, 0, curhp, 10));			
 		}
 		else if (my_packet->id < MAX_USER) {
 			players[my_packet->id].level = my_packet->level;
