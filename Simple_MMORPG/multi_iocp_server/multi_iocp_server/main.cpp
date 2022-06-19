@@ -810,13 +810,23 @@ void roaming_npc(int npc_id, int c_id)
 
 	if (clients[npc_id].attack_type == ATTACKTYPE::ATTACKTYPE_AGRO)		// diablo
 	{
-		auto L = clients[npc_id].L;
-		clients[npc_id].vm_l.lock();
-		lua_getglobal(L, "event_boss_move");
-		int dir = rand() % 4;
-		lua_pushnumber(L, dir);
-		lua_pcall(L, 1, 0, 0);
-		clients[npc_id].vm_l.unlock();
+		if (distance(c_id, npc_id) < 5)
+		{
+			if (clients[npc_id]._target_id == 10000)
+				clients[npc_id]._target_id = c_id;
+		}
+		if (clients[npc_id]._target_id != 10000)
+			chase_player(npc_id, clients[npc_id]._target_id);
+		else
+		{
+			auto L = clients[npc_id].L;
+			clients[npc_id].vm_l.lock();
+			lua_getglobal(L, "event_boss_move");
+			int dir = rand() % 4;
+			lua_pushnumber(L, dir);
+			lua_pcall(L, 1, 0, 0);
+			clients[npc_id].vm_l.unlock();
+		}
 	}
 }
 
