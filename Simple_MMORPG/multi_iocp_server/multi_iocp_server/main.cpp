@@ -579,6 +579,11 @@ void process_packet(int c_id, char* packet)
 		}
 		break;
 	}
+	case CS_CHAT:
+	{
+		CS_CHAT_PACKET* p = reinterpret_cast<CS_CHAT_PACKET*>(packet);
+		cout << p->mess;
+	}
 	}
 }
 

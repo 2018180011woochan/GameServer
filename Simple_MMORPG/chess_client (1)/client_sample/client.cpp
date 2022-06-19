@@ -581,6 +581,7 @@ int main()
 	g_window = &window;
 	int a = 10;
 	sf::Vector2i pos;
+	char player_chat[BUF_SIZE];
 	while (window.isOpen())
 	{
 		sf::Event event;
@@ -642,7 +643,18 @@ int main()
 				case sf::Mouse::Left:
 					pos = sf::Mouse::getPosition(window);
 					if (pos.x > 0 && pos.x < 90 && pos.y > 900 && pos.y < 990)
-						a = 10;
+					{
+						cin >> player_chat;
+						
+						CS_CHAT_PACKET p;
+						p.size = sizeof(CS_CHAT_PACKET);
+						p.type = CS_CHAT;
+						p.target_id = 0;
+						p.chat_type = CHATTYPE_SHOUT;
+
+						strcpy_s(p.mess, player_chat);
+						send_packet(&p);
+					}
 					break;
 				default:
 					break;
