@@ -13,6 +13,7 @@ constexpr char CS_LOGIN = 0;
 constexpr char CS_MOVE = 1;
 constexpr char CS_ATTACK = 2;
 constexpr char CS_CHAT = 3;
+constexpr char CS_PARTY_INVITE = 4;
 
 constexpr char SC_LOGIN_OK = 11;
 constexpr char SC_LOGIN_FAIL = 12;
@@ -22,7 +23,7 @@ constexpr char SC_MOVE_OBJECT = 15;
 constexpr char SC_CHAT = 16;
 constexpr char SC_STAT_CHANGE = 17;
 constexpr char SC_PLAYER_ATTACK = 18;
-
+constexpr char SC_PARTY = 19;
 
 #pragma pack (push, 1)
 struct CS_LOGIN_PACKET {
@@ -51,6 +52,14 @@ struct CS_CHAT_PACKET {
 	char	chat_type;			// 1 : say,  2 : tell, 3 : shout
 	char	mess[BUF_SIZE];
 };
+
+/////////////////////////////////////////////////// 
+struct CS_PARTY_INVITE_PACKET {
+	unsigned char size;
+	char	type;
+	int		master_id;
+};
+///////////////////////////////////////////////////
 
 struct SC_LOGIN_OK_PACKET {
 	unsigned char size;
@@ -120,13 +129,17 @@ struct SC_STAT_CHANGE_PACKET {
 };
 
 /////////////////////////////////////////////////// 
-
 struct SC_PLAYER_ATTACK_PACKET {
 	unsigned char size;
 	char	type;
 	int		id;
 };
 
+struct SC_PARTY_PACKET {
+	unsigned char size;
+	char	type;
+	int		id;
+};
 ///////////////////////////////////////////////////
 
 #pragma pack (pop)

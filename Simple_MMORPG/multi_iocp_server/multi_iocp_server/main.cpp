@@ -129,7 +129,7 @@ public:
 	ATTACKTYPE _attacktype;
 	MOVETYPE _movetype;
 	short _target_id;
-
+	vector<int> my_party;
 	chrono::system_clock::time_point next_move_time;
 	int		_prev_remain;
 public:
@@ -332,6 +332,7 @@ void process_packet(int c_id, char* packet)
 		clients[c_id]._sl.unlock();
 
 		ConnectedPlayer.push_back(c_id);
+		clients[c_id].my_party.push_back(c_id);
 		//clients[c_id].x = rand() % W_WIDTH;
 		//clients[c_id].y = rand() % W_HEIGHT;
 
@@ -583,8 +584,32 @@ void process_packet(int c_id, char* packet)
 	{
 		CS_CHAT_PACKET* p = reinterpret_cast<CS_CHAT_PACKET*>(packet);
 		cout << p->mess;
+		break;
+	}
+	case CS_PARTY_INVITE:
+	{
+		CS_PARTY_INVITE_PACKET* p = reinterpret_cast<CS_PARTY_INVITE_PACKET*>(packet);
+		for (int& connected_id : ConnectedPlayer) {
+			if (clients[connected_id]._id == p->master_id) break;
+			if (distance(connected_id, p->master_id) == 0)
+			{
+				SC_PARTY_PACKET party_packet;
+				party_packet.size = sizeof(SC_PARTY_PACKET);
+				party_packet.type = SC_PARTY;
+				party_packet.id = connected_id;
+				clients[p->master_id].do_send(&party_packet);
+				party_packet.id = p->master_id;
+				clients[connected_id].do_send(&party_packet);
+
+				clients[p->master_id].my_party.push_back(connected_id);
+				clients[connected_id].my_party.push_back(p->master_id);
+			}
+				
+		}
+		break;
 	}
 	}
+
 }
 
 void disconnect(int c_id)

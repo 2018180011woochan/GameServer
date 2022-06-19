@@ -36,7 +36,7 @@ constexpr auto WINDOW_HEIGHT = 65 * SCREEN_WIDTH + 10;
 
 int g_left_x;
 int g_top_y;
-
+bool g_isChat = false;
 
 sf::RenderWindow* g_window;
 sf::Font g_font;
@@ -59,6 +59,7 @@ public:
 	int level;
 	int exp, maxexp;
 	int hp, hpmax;
+	vector<int> my_party;
 	sf::Sprite m_HPBar;
 
 	OBJECT(sf::Texture& t, int x, int y, int x2, int y2) {
@@ -265,6 +266,9 @@ void ProcessPacket(char* ptr)
 		avatar.level = packet->level;
 		avatar.exp = packet->exp;
 		avatar.set_name(NickName);
+
+		avatar.my_party.push_back(avatar.id);
+
 		char lev[10];
 		sprintf_s(lev, "%d", avatar.level);
 		avatar.set_level(lev);
@@ -425,6 +429,13 @@ void ProcessPacket(char* ptr)
 		}
 		break;
 	}
+	case SC_PARTY:
+	{
+		SC_PARTY_PACKET* packet = reinterpret_cast<SC_PARTY_PACKET*>(ptr);
+		if (packet->id == avatar.id) break;
+		avatar.my_party.push_back(packet->id);
+		break;
+	}
 	/*case SC_PLAYER_ATTACK:	// 나중에
 	{
 		SC_PLAYER_ATTACK_PACKET* attckpacket = reinterpret_cast<SC_PLAYER_ATTACK_PACKET*>(ptr);
@@ -548,19 +559,22 @@ void send_packet(void *packet)
 
 void Login()
 {
-	int db_id = 0;
-	cout << "ID를 입력하세요 ";
-	cin >> db_id;
-	cout << "\n닉네임을 입력하세요 ";
-	cin >> NickName;
+	if (!g_isChat)
+	{
+		int db_id = 0;
+		cout << "ID를 입력하세요 ";
+		cin >> db_id;
+		cout << "\n닉네임을 입력하세요 ";
+		cin >> NickName;
 
-	CS_LOGIN_PACKET p;
-	p.size = sizeof(CS_LOGIN_PACKET);
-	p.type = CS_LOGIN;
-	p.db_id = db_id;
+		CS_LOGIN_PACKET p;
+		p.size = sizeof(CS_LOGIN_PACKET);
+		p.type = CS_LOGIN;
+		p.db_id = db_id;
 
-	strcpy_s(p.name, NickName);
-	send_packet(&p);
+		strcpy_s(p.name, NickName);
+		send_packet(&p);
+	}
 }
 
 int main()
@@ -582,6 +596,7 @@ int main()
 	int a = 10;
 	sf::Vector2i pos;
 	char player_chat[BUF_SIZE];
+	string cchat;
 	while (window.isOpen())
 	{
 		sf::Event event;
@@ -604,7 +619,24 @@ int main()
 				case sf::Keyboard::Down:
 					direction = DIRECTION::DIRECTION_DOWN;
 					break;
-				case sf::Keyboard::A:	// 스킬 사용
+				case sf::Keyboard::H:
+					cchat += 'h';
+					break;
+
+				case sf::Keyboard::C:
+					CS_PARTY_INVITE_PACKET party_p;
+					party_p.size = sizeof(CS_PARTY_INVITE_PACKET);
+					party_p.type = CS_PARTY_INVITE;
+					party_p.master_id = avatar.id;
+					
+					send_packet(&party_p);
+					break;
+				case sf::Keyboard::A:	// 공격
+					if (g_isChat) {
+						cchat += 'a';
+						break;
+					}
+
 					PlayerSkill[0].m_x = avatar.m_x;
 					PlayerSkill[0].m_y = avatar.m_y - 1;
 					PlayerSkill[0].show();
@@ -622,6 +654,18 @@ int main()
 					p.size = sizeof(CS_ATTACK_PACKET);
 					p.type = CS_ATTACK;
 					send_packet(&p);
+
+					break;
+				case sf::Keyboard::Enter:		// 알수 없는 오류로 인해 채팅은 나중에
+					/*CS_CHAT_PACKET chat_packet;
+					chat_packet.size = sizeof(CS_CHAT_PACKET);
+					chat_packet.type = CS_CHAT;
+					chat_packet.target_id = 0;
+					chat_packet.chat_type = CHATTYPE_SHOUT;
+
+					strcpy_s(chat_packet.mess, cchat.c_str());
+					send_packet(&chat_packet);
+					g_isChat = false;*/
 					break;
 				case sf::Keyboard::Escape:
 					window.close();
@@ -634,7 +678,7 @@ int main()
 					p.direction = direction;
 					send_packet(&p);
 				}
-
+				
 			}
 			if (event.type == sf::Event::MouseButtonPressed)
 			{
@@ -644,16 +688,9 @@ int main()
 					pos = sf::Mouse::getPosition(window);
 					if (pos.x > 0 && pos.x < 90 && pos.y > 900 && pos.y < 990)
 					{
-						cin >> player_chat;
+						g_isChat = true;
 						
-						CS_CHAT_PACKET p;
-						p.size = sizeof(CS_CHAT_PACKET);
-						p.type = CS_CHAT;
-						p.target_id = 0;
-						p.chat_type = CHATTYPE_SHOUT;
-
-						strcpy_s(p.mess, player_chat);
-						send_packet(&p);
+						
 					}
 					break;
 				default:
