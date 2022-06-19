@@ -850,7 +850,6 @@ void AttackNPC(int npc_id, int c_id)
 
 				cout << clients[npc_id]._name << "[" << clients[npc_id]._id << "] " << "의 공격으로 "
 					<< clients[i]._name << "의 HP가 " << clients[i].hp << "가 되었습니다.\n";
-
 				
 				clients[i].do_send(&scp);
 			}

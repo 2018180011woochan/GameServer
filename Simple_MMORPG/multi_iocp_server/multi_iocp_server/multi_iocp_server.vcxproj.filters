@@ -54,5 +54,8 @@
     <None Include="hello.lua">
       <Filter>리소스 파일</Filter>
     </None>
+    <None Include="diablo.lua">
+      <Filter>리소스 파일</Filter>
+    </None>
   </ItemGroup>
 </Project>
