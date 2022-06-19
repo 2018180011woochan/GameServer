@@ -175,7 +175,8 @@ OBJECT npcs[NUM_NPC];
 
 vector<OBJECT> PlayerSkill;
 
-OBJECT white_tile;
+//OBJECT white_tile;
+OBJECT MapObj;
 
 sf::Texture* board;
 sf::Texture* pieces;
@@ -197,7 +198,7 @@ void client_initialize()
 	AttackSource = new sf::Texture;
 	HPBar = new sf::Texture;
 
-	board->loadFromFile("Texture/Map/0.png");
+	board->loadFromFile("Texture/Map/map.bmp");
 	pieces->loadFromFile("Texture/User/player.png");
 	skeleton->loadFromFile("Texture/Monster/Skeleton.png");
 	wraith->loadFromFile("Texture/Monster/wraith.png");
@@ -206,7 +207,7 @@ void client_initialize()
 	AttackSource->loadFromFile("Texture/UserAttack/fire.png");
 	HPBar->loadFromFile("Texture/User/HPBar.bmp");
 
-	white_tile = OBJECT{ *board, 500, 220, TILE_WIDTH, TILE_HEIGHT };
+	MapObj = OBJECT{ *board, 0, 0, 2000, 2000 };
 
 	if (false == g_font.loadFromFile("cour.ttf")) {
 		cout << "Font Loading Error!\n";
@@ -470,8 +471,10 @@ void client_main()
 			int tile_y = j + g_top_y;
 			if ((tile_x < 0) || (tile_y < 0)) continue;
 			if (((tile_x + tile_y) % 2) <= 1) {
-				white_tile.a_move(65 * i + 1, 65 * j + 1);
-				white_tile.a_draw();
+				/*white_tile.a_move(65 * i + 1, 65 * j + 1);
+				white_tile.a_draw();*/
+				MapObj.a_move(65 * i + 1, 65 * j + 1);
+				MapObj.a_draw();
 			}
 			/*else if (((tile_x + tile_y) % 6) > 2 && ((tile_x + tile_y) % 6) <= 4)
 			{
@@ -484,6 +487,8 @@ void client_main()
 				red_tile.a_draw();
 			}*/
 		}
+	//MapObj.a_draw();
+
 	avatar.draw();
 	for (int i = 0; i < 4; ++i)
 		PlayerSkill[i].idraw();
