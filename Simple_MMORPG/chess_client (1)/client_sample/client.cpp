@@ -355,6 +355,16 @@ void ProcessPacket(char* ptr)
 				char lev[10];
 				sprintf_s(lev, "%d", my_packet->level);
 				avatar.set_level(lev);
+
+				for (int i = MAX_USER; i < NUM_NPC; ++i)
+				{
+					if (avatar.level < npcs[i].level)
+						npcs[i].set_nameColor(NameColor::COLOR_RED);
+					if (avatar.level > npcs[i].level)
+						npcs[i].set_nameColor(NameColor::COLOR_GREEN);
+					if (avatar.level == npcs[i].level)
+						npcs[i].set_nameColor(NameColor::COLOR_YELLO);
+				}
 			}
 
 			avatar.level = my_packet->level;

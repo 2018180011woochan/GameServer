@@ -354,6 +354,7 @@ void process_packet(int c_id, char* packet)
 		}
 		for (auto& pl : clients) {
 			if (pl._id == c_id) continue;
+			if (pl.isNpcDead) continue;
 			lock_guard<mutex> aa{ pl._sl };
 			if (ST_INGAME != pl._s_state) continue;
 
@@ -468,8 +469,11 @@ void process_packet(int c_id, char* packet)
 						scp.size = sizeof(SC_STAT_CHANGE_PACKET);
 						scp.type = SC_STAT_CHANGE;
 						scp.id = c_id;
-						int rewardEXP = int(clients[i].level * clients[i].level) * 2;
-
+						int rewardEXP = int(clients[i].level* clients[i].level) * 2;
+						if (clients[i].attack_type == ATTACKTYPE_AGRO)
+							rewardEXP *= 2;
+						if (clients[i].move_type == MOVETYPE_ROAMING)
+							rewardEXP *= 2;
 						clients[c_id].exp += rewardEXP;
 						if (clients[c_id].exp > clients[c_id].maxexp)		// ·¾¾÷
 						{
