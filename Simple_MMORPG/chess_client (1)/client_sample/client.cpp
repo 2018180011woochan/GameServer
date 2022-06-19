@@ -471,23 +471,12 @@ void client_main()
 			int tile_y = j + g_top_y;
 			if ((tile_x < 0) || (tile_y < 0)) continue;
 			if (((tile_x + tile_y) % 2) <= 1) {
-				/*white_tile.a_move(65 * i + 1, 65 * j + 1);
-				white_tile.a_draw();*/
+
 				MapObj.a_move(65 * i + 1, 65 * j + 1);
 				MapObj.a_draw();
 			}
-			/*else if (((tile_x + tile_y) % 6) > 2 && ((tile_x + tile_y) % 6) <= 4)
-			{
-				black_tile.a_move(TILE_WIDTH * i + 7, TILE_WIDTH * j + 7);
-				black_tile.a_draw();
-			}
-			else
-			{
-				red_tile.a_move(TILE_WIDTH * i + 7, TILE_WIDTH * j + 7);
-				red_tile.a_draw();
-			}*/
+
 		}
-	//MapObj.a_draw();
 
 	avatar.draw();
 	for (int i = 0; i < 4; ++i)
