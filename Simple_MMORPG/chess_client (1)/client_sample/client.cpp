@@ -45,6 +45,8 @@ char NickName[200] = "ALEX Jr";
 
 void Login();
 
+enum NameColor {COLOR_GREEN, COLOR_YELLO, COLOR_RED};
+
 class OBJECT {
 private:
 	bool m_showing;
@@ -115,7 +117,7 @@ public:
 		m_HPBar.setPosition(rx, ry);
 		g_window->draw(m_HPBar);
 
-		m_name.setPosition(rx, ry - 20);
+		m_name.setPosition(rx, ry - 40);
 		g_window->draw(m_name);
 
 		m_level.setPosition(rx - 40, ry - 20);
@@ -146,6 +148,24 @@ public:
 		m_level.setString(level);
 		m_level.setFillColor(sf::Color(255, 255, 0));
 		m_level.setStyle(sf::Text::Bold);
+	}
+
+	void set_nameColor(NameColor _color)
+	{
+		switch (_color)
+		{
+		case COLOR_GREEN:
+			m_name.setFillColor(sf::Color(0, 255, 0));
+			break;
+		case COLOR_YELLO:
+			m_name.setFillColor(sf::Color(255, 255, 0));
+			break;
+		case COLOR_RED:
+			m_name.setFillColor(sf::Color(255, 0, 0));
+			break;
+		default:
+			break;
+		}		
 	}
 };
 
@@ -292,11 +312,18 @@ void ProcessPacket(char* ptr)
 				break;
 			}
 			npcs[id - MAX_USER].move(my_packet->x, my_packet->y);
-			npcs[id - MAX_USER].set_name(my_packet->name);
 			char lev[10];
 			sprintf_s(lev, "%d", my_packet->level);
 			npcs[id - MAX_USER].set_level(lev);
+			npcs[id - MAX_USER].set_name(my_packet->name);
 			npcs[id - MAX_USER].set_info(my_packet->level, my_packet->hp, my_packet->hpmax);
+
+			if (avatar.level < npcs[id - MAX_USER].level)
+				npcs[id - MAX_USER].set_nameColor(NameColor::COLOR_RED);
+			if (avatar.level > npcs[id - MAX_USER].level)
+				npcs[id - MAX_USER].set_nameColor(NameColor::COLOR_GREEN);
+			if (avatar.level == npcs[id - MAX_USER].level)
+				npcs[id - MAX_USER].set_nameColor(NameColor::COLOR_YELLO);
 
 			npcs[id - MAX_USER].show();
 		}

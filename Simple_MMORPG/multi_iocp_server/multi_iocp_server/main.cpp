@@ -1186,11 +1186,6 @@ int API_BossMove(lua_State* L)
 	return 1;
 }
 
-int API_ChasePlayer(lua_State* L)
-{
-	return 1;
-}
-
 void initialize_npc()
 {
 	for (int i = 0; i < NUM_NPC + MAX_USER; ++i)
