@@ -21,6 +21,7 @@ constexpr char SC_REMOVE_OBJECT = 14;
 constexpr char SC_MOVE_OBJECT = 15;
 constexpr char SC_CHAT = 16;
 constexpr char SC_STAT_CHANGE = 17;
+constexpr char SC_PLAYER_ATTACK = 18;
 
 
 #pragma pack (push, 1)
@@ -117,5 +118,15 @@ struct SC_STAT_CHANGE_PACKET {
 	int		exp;
 	int		hp, hpmax;
 };
+
+/////////////////////////////////////////////////// 
+
+struct SC_PLAYER_ATTACK_PACKET {
+	unsigned char size;
+	char	type;
+	int		id;
+};
+
+///////////////////////////////////////////////////
 
 #pragma pack (pop)

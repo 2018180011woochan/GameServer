@@ -444,6 +444,14 @@ void process_packet(int c_id, char* packet)
 		for (int i = MAX_USER; i < NUM_NPC; ++i) {
 			if (clients[i].isNpcDead)
 				continue;
+			// 나중에
+			/*SC_PLAYER_ATTACK_PACKET p_attackpkt;
+			p_attackpkt.size = sizeof(SC_PLAYER_ATTACK_PACKET);
+			p_attackpkt.type = SC_PLAYER_ATTACK;
+			p_attackpkt.id = c_id;
+			for (int& connected_id : ConnectedPlayer)
+				clients[connected_id].do_send(&p_attackpkt);*/
+
 			if (clients[c_id].x == clients[i].x) {
 				if (abs(clients[c_id].y - clients[i].y) <= 1) {	// 상하
 					clients[i].hp -= clients[c_id].level * 50;
@@ -911,11 +919,14 @@ void AttackNPC(int npc_id, int c_id)
 					clients[i].exp = clients[i].exp / 2;
 					scp.hp = clients[i].hp;
 					scp.exp = clients[i].exp;
-					clients[i].do_send(&scp);
+					for (int& connected_id : ConnectedPlayer)
+						clients[connected_id].do_send(&scp);
 
 					clients[i].x = 0;
 					clients[i].y = 0;
-					clients[i].send_move_packet(i, 0);
+
+					for (int& connected_id : ConnectedPlayer)
+						clients[connected_id].send_move_packet(connected_id, 0);
 					break;
 				}
 
@@ -953,14 +964,16 @@ void AttackNPC(int npc_id, int c_id)
 
 					clients[i].x = 0;
 					clients[i].y = 0;
-					clients[i].send_move_packet(i, 0);
+					for (int& connected_id : ConnectedPlayer)
+						clients[connected_id].send_move_packet(connected_id, 0);
 					break;
 				}
 
 				cout << clients[npc_id]._name << "[" << clients[npc_id]._id << "] " << "의 공격으로 "
 					<< clients[i]._name << "의 HP가 " << clients[i].hp << "가 되었습니다.\n";
 
-				clients[i].do_send(&scp);
+				for (int& connected_id : ConnectedPlayer)
+					clients[connected_id].do_send(&scp);
 			}
 		}
 	}

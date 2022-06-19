@@ -172,6 +172,7 @@ public:
 OBJECT avatar;
 OBJECT players[MAX_USER];
 OBJECT npcs[NUM_NPC];
+OBJECT chaticon;
 
 vector<OBJECT> PlayerSkill;
 
@@ -186,6 +187,7 @@ sf::Texture* devil;
 sf::Texture* diablo;
 sf::Texture* AttackSource;
 sf::Texture* HPBar;
+sf::Texture* Chatimage;
 
 void client_initialize()
 {
@@ -197,6 +199,7 @@ void client_initialize()
 	diablo = new sf::Texture;
 	AttackSource = new sf::Texture;
 	HPBar = new sf::Texture;
+	Chatimage = new sf::Texture;
 
 	board->loadFromFile("Texture/Map/map.bmp");
 	pieces->loadFromFile("Texture/User/player.png");
@@ -206,6 +209,7 @@ void client_initialize()
 	diablo->loadFromFile("Texture/Monster/Diablo.png");
 	AttackSource->loadFromFile("Texture/UserAttack/fire.png");
 	HPBar->loadFromFile("Texture/User/HPBar.bmp");
+	Chatimage->loadFromFile("Texture/User/chaticon.png");
 
 	MapObj = OBJECT{ *board, 0, 0, 2000, 2000 };
 
@@ -216,7 +220,7 @@ void client_initialize()
 	//black_tile = OBJECT{ *board, 600, 300, TILE_WIDTH, TILE_WIDTH };
 
 	
-	for (int i = 0; i < 4; ++i)
+	for (int i = 0; i < 8; ++i)
 	{
 		PlayerSkill.push_back(OBJECT{ *AttackSource, 0, 120, 60, 60 });
 	}
@@ -229,6 +233,8 @@ void client_initialize()
 	for (auto& npc : npcs) {
 		npc = OBJECT{ *skeleton, 0, 0, 38, 73, *HPBar, 0, 0, 89, 10 };
 	}
+
+	chaticon = OBJECT{ *Chatimage, 0, 0, 90, 90 };
 }
 
 void client_finish()
@@ -240,6 +246,7 @@ void client_finish()
 	delete devil;
 	delete diablo;
 	delete HPBar;
+	delete Chatimage;
 }
 
 void ProcessPacket(char* ptr)
@@ -418,6 +425,24 @@ void ProcessPacket(char* ptr)
 		}
 		break;
 	}
+	/*case SC_PLAYER_ATTACK:	// 나중에
+	{
+		SC_PLAYER_ATTACK_PACKET* attckpacket = reinterpret_cast<SC_PLAYER_ATTACK_PACKET*>(ptr);
+		if (attckpacket->id == avatar.id) break;
+
+		PlayerSkill[0].m_x = players[attckpacket->id].m_x;
+		PlayerSkill[0].m_y = players[attckpacket->id].m_y - 1;
+		PlayerSkill[0].show();
+		PlayerSkill[1].m_x = players[attckpacket->id].m_x;
+		PlayerSkill[1].m_y = players[attckpacket->id].m_y + 1;
+		PlayerSkill[1].show();
+		PlayerSkill[2].m_x = players[attckpacket->id].m_x - 1;
+		PlayerSkill[2].m_y = players[attckpacket->id].m_y;
+		PlayerSkill[2].show();
+		PlayerSkill[3].m_x = players[attckpacket->id].m_x + 1;
+		PlayerSkill[3].m_y = players[attckpacket->id].m_y;
+		PlayerSkill[3].show();
+	}*/
 	default:
 		printf("Unknown PACKET type [%d]\n", ptr[1]);
 	}
@@ -479,7 +504,7 @@ void client_main()
 		}
 
 	avatar.draw();
-	for (int i = 0; i < 4; ++i)
+	for (int i = 0; i < 8; ++i)
 		PlayerSkill[i].idraw();
 
 	// 임시방편
@@ -495,9 +520,23 @@ void client_main()
 			cnt = 0;
 		}
 	}
+	if (PlayerSkill[4].isShow())
+	{
+		cnt++;
+		if (cnt > 100)
+		{
+			for (int i = 4; i < 8; ++i)
+			{
+				PlayerSkill[i].hide();
+			}
+			cnt = 0;
+		}
+	}
 
 	for (auto& pl : players) pl.draw();
-	for (auto& pl : npcs) pl.draw();
+	for (auto& pl : npcs) pl.draw(); 
+	chaticon.a_move(0, 900);
+	chaticon.a_draw();
 }
 
 void send_packet(void *packet)
@@ -538,10 +577,10 @@ int main()
 	}
 
 	client_initialize();
-
 	sf::RenderWindow window(sf::VideoMode(WINDOW_WIDTH, WINDOW_HEIGHT), "Simplest_MMORPG");
 	g_window = &window;
 	int a = 10;
+	sf::Vector2i pos;
 	while (window.isOpen())
 	{
 		sf::Event event;
@@ -595,6 +634,19 @@ int main()
 					send_packet(&p);
 				}
 
+			}
+			if (event.type == sf::Event::MouseButtonPressed)
+			{
+				switch (event.key.code)
+				{
+				case sf::Mouse::Left:
+					pos = sf::Mouse::getPosition(window);
+					if (pos.x > 0 && pos.x < 90 && pos.y > 900 && pos.y < 990)
+						a = 10;
+					break;
+				default:
+					break;
+				}
 			}
 		}
 
