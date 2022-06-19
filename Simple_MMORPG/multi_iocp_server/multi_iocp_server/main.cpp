@@ -659,7 +659,9 @@ void do_worker()
 				roaming_npc(npc_id, ex_over->target_id);
 			else
 				fix_npc(npc_id, ex_over->target_id);
-			//AttackNPC(npc_id);
+
+			if (clients[npc_id]._target_id != 10000)
+				AttackNPC(npc_id, ex_over->target_id);
 			//auto L = clients[client_id].L;
 			//clients[client_id].vm_l.lock();
 			//lua_getglobal(L, "event_player_move");
@@ -751,52 +753,64 @@ void fix_npc(int npc_id, int c_id)
 
 void roaming_npc(int npc_id, int c_id)
 {
-	short x = clients[npc_id].x;
-	short y = clients[npc_id].y;
-	unordered_set<int> old_vl;
-	for (int i = 0; i < MAX_USER; ++i) {
-		if (clients[i]._s_state != ST_INGAME) continue;
-		if (distance(npc_id, i) <= RANGE) old_vl.insert(i);
-	}
-	switch (rand() % 4) {
-	case 0: if (y > 0) y--; break;
-	case 1: if (y < W_HEIGHT - 1) y++; break;
-	case 2: if (x > 0) x--; break;
-	case 3: if (x < W_WIDTH - 1) x++; break;
-	}
-
-	clients[npc_id].x = x;
-	clients[npc_id].y = y;
-
-	unordered_set<int> new_vl;
-	for (int i = 0; i < MAX_USER; ++i) {
-		if (clients[i]._s_state != ST_INGAME) continue;
-		if (distance(npc_id, i) <= RANGE) new_vl.insert(i);
-	}
-
-	for (auto p_id : new_vl) {
-			clients[p_id].vl.lock();
-			if (0 == clients[p_id].view_list.count(npc_id)) {
-				clients[p_id].view_list.insert(npc_id);
-				clients[p_id].vl.unlock();
-				clients[p_id].send_add_object(npc_id);
+	if (clients[npc_id].attack_type == ATTACKTYPE::ATTACKTYPE_PEACE)	// devil
+	{
+		if (clients[npc_id]._target_id != 10000)
+			chase_player(npc_id, clients[npc_id]._target_id);
+		else {
+			short x = clients[npc_id].x;
+			short y = clients[npc_id].y;
+			unordered_set<int> old_vl;
+			for (int i = 0; i < MAX_USER; ++i) {
+				if (clients[i]._s_state != ST_INGAME) continue;
+				if (distance(npc_id, i) <= RANGE) old_vl.insert(i);
 			}
-			else {
-				clients[p_id].vl.unlock();
-				clients[p_id].send_move_packet(npc_id, 0);
+			switch (rand() % 4) {
+			case 0: if (y > 0) y--; break;
+			case 1: if (y < W_HEIGHT - 1) y++; break;
+			case 2: if (x > 0) x--; break;
+			case 3: if (x < W_WIDTH - 1) x++; break;
 			}
-	}
-	for (auto p_id : old_vl) {
-		if (0 == new_vl.count(p_id)) {
-			clients[p_id].vl.lock();
-			if (clients[p_id].view_list.count(npc_id) == 1) {
-				clients[p_id].view_list.erase(npc_id);
-				clients[p_id].vl.unlock();
-				clients[p_id].send_remove_object(npc_id);
+
+			clients[npc_id].x = x;
+			clients[npc_id].y = y;
+
+			unordered_set<int> new_vl;
+			for (int i = 0; i < MAX_USER; ++i) {
+				if (clients[i]._s_state != ST_INGAME) continue;
+				if (distance(npc_id, i) <= RANGE) new_vl.insert(i);
 			}
-			else
-				clients[p_id].vl.unlock();
+
+			for (auto p_id : new_vl) {
+				clients[p_id].vl.lock();
+				if (0 == clients[p_id].view_list.count(npc_id)) {
+					clients[p_id].view_list.insert(npc_id);
+					clients[p_id].vl.unlock();
+					clients[p_id].send_add_object(npc_id);
+				}
+				else {
+					clients[p_id].vl.unlock();
+					clients[p_id].send_move_packet(npc_id, 0);
+				}
+			}
+			for (auto p_id : old_vl) {
+				if (0 == new_vl.count(p_id)) {
+					clients[p_id].vl.lock();
+					if (clients[p_id].view_list.count(npc_id) == 1) {
+						clients[p_id].view_list.erase(npc_id);
+						clients[p_id].vl.unlock();
+						clients[p_id].send_remove_object(npc_id);
+					}
+					else
+						clients[p_id].vl.unlock();
+				}
+			}
 		}
+	}
+
+	if (clients[npc_id].attack_type == ATTACKTYPE::ATTACKTYPE_AGRO)		// diablo
+	{
+
 	}
 }
 
