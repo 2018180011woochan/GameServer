@@ -718,12 +718,7 @@ void do_worker()
 
 			if (clients[npc_id]._target_id != 10000)
 				AttackNPC(npc_id, ex_over->target_id);
-			//auto L = clients[client_id].L;
-			//clients[client_id].vm_l.lock();
-			//lua_getglobal(L, "event_player_move");
-			//lua_pushnumber(L, ex_over->target_id);
-			//lua_pcall(L, 1, 0, 0);
-			//clients[client_id].vm_l.unlock();
+
 			delete ex_over;
 		}
 						   break;
@@ -1033,7 +1028,7 @@ void do_ai_ver_heat_beat()
 		{
 			for (auto& c_id : ConnectedPlayer)
 			{
-				if (distance(i, c_id) < 11)
+				if (distance(i, c_id) < RANGE)
 				{
 					if (!clients[i].isNpcDead)
 					{

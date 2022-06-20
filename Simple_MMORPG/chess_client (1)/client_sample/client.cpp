@@ -86,11 +86,14 @@ public:
 	OBJECT() {
 		m_showing = false;
 	}
-	void set_info(int _level, int _hp, int _hpmax)
+	void set_info(int _id, int _level, int _hp, int _hpmax, int _x, int _y)
 	{
+		id = _id;
 		level = _level;
 		hp = _hp;
 		hpmax = _hpmax;
+		m_x = _x;
+		m_y = _y;
 	}
 	void show()
 	{
@@ -120,8 +123,8 @@ public:
 		float ry = (m_y - g_top_y) * 65.0f + 8;
 		m_sprite.setPosition(rx, ry);
 		g_window->draw(m_sprite);
-		m_HPBar.setPosition(rx, ry);
-		g_window->draw(m_HPBar);
+		//m_HPBar.setPosition(rx, ry);
+		//g_window->draw(m_HPBar);
 
 		m_name.setPosition(rx, ry - 40);
 		g_window->draw(m_name);
@@ -129,7 +132,22 @@ public:
 		m_level.setPosition(rx - 40, ry - 40);
 		g_window->draw(m_level);
 
-		
+
+	}
+	void draw_hp() {
+		if (false == m_showing) return;
+		float rx = (m_x - g_left_x) * 65.0f + 8;
+		float ry = (m_y - g_top_y) * 65.0f + 8;
+		m_sprite.setPosition(rx, ry);
+		g_window->draw(m_sprite);
+		m_HPBar.setPosition(rx, ry);
+		g_window->draw(m_HPBar);
+
+		m_name.setPosition(rx, ry - 40);
+		g_window->draw(m_name);
+
+		m_level.setPosition(rx - 40, ry - 40);
+		g_window->draw(m_level);	
 	}
 	void draw_ui()
 	{
@@ -147,9 +165,9 @@ public:
 		m_level.setPosition(rx - 40, ry - 40);
 		g_window->draw(m_level);
 
-		ui_m_name.setPosition(my_party.size() * 50, 10);
+		ui_m_name.setPosition(0, 10);
 		g_window->draw(ui_m_name);
-		ui_m_HPBar.setPosition(my_party.size() * 50, 50);
+		ui_m_HPBar.setPosition(0, 50);
 		g_window->draw(ui_m_HPBar);
 	}
 	void idraw()
@@ -192,12 +210,15 @@ public:
 		{
 		case COLOR_GREEN:
 			m_name.setFillColor(sf::Color(0, 255, 0));
+			m_level.setFillColor(sf::Color(0, 255, 0));
 			break;
 		case COLOR_YELLO:
 			m_name.setFillColor(sf::Color(255, 255, 0));
+			m_level.setFillColor(sf::Color(255, 255, 0));
 			break;
 		case COLOR_RED:
 			m_name.setFillColor(sf::Color(255, 0, 0));
+			m_level.setFillColor(sf::Color(255, 0, 0));
 			break;
 		default:
 			break;
@@ -340,11 +361,10 @@ void ProcessPacket(char* ptr)
 		if (id < MAX_USER) {
 			players[id].move(my_packet->x, my_packet->y);
 			players[id].set_name(my_packet->name, false);
-
 			char lev[10];
 			sprintf_s(lev, "%d", my_packet->level);
 			players[id].set_level(lev);
-
+			players[id].set_info(my_packet->id, my_packet->level, my_packet->hp, my_packet->hpmax, my_packet->x, my_packet->y);
 			players[id].show();
 		}
 		else {
@@ -368,7 +388,7 @@ void ProcessPacket(char* ptr)
 			sprintf_s(lev, "%d", my_packet->level);
 			npcs[id - MAX_USER].set_level(lev);
 			npcs[id - MAX_USER].set_name(my_packet->name, false);
-			npcs[id - MAX_USER].set_info(my_packet->level, my_packet->hp, my_packet->hpmax);
+			npcs[id - MAX_USER].set_info(my_packet->id, my_packet->level, my_packet->hp, my_packet->hpmax, my_packet->x, my_packet->y);
 
 			if (avatar.level < npcs[id - MAX_USER].level)
 				npcs[id - MAX_USER].set_nameColor(NameColor::COLOR_RED);
@@ -590,11 +610,13 @@ void client_main()
 		for (auto& party : my_party)
 		{
 			if (party == pl.id)
-				pl.draw_ui();
+				pl.draw_hp();
+			else
+				pl.draw();
 		}
-		pl.draw();
+		
 	}
-	for (auto& pl : npcs) pl.draw(); 
+	for (auto& pl : npcs) pl.draw_hp(); 
 	chaticon.a_move(0, 900);
 	chaticon.a_draw();
 }
