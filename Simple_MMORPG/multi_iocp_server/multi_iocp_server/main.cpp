@@ -293,6 +293,9 @@ void process_packet(int c_id, char* packet)
 	case CS_LOGIN: {
 		CS_LOGIN_PACKET* p = reinterpret_cast<CS_LOGIN_PACKET*>(packet);
 
+		if (p->name[0] == '\0')
+			break;
+
 		for (int i = 0; i < MAX_USER; ++i)
 		{
 			if (clients[i]._db_id == p->db_id)

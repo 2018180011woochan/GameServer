@@ -637,9 +637,8 @@ void Login()
 		int db_id = 0;
 		cout << "ID를 입력하세요 ";
 		cin >> db_id;
-		cout << "\n닉네임을 입력하세요 ";
+		cout << "닉네임을 입력하세요 ";
 		cin >> NickName;
-
 		CS_LOGIN_PACKET p;
 		p.size = sizeof(CS_LOGIN_PACKET);
 		p.type = CS_LOGIN;
@@ -693,7 +692,8 @@ int main()
 					direction = DIRECTION::DIRECTION_DOWN;
 					break;
 				case sf::Keyboard::H:
-					cchat += 'h';
+					if (g_isChat)
+						cchat += 'h';
 					break;
 
 				case sf::Keyboard::C:
@@ -709,36 +709,41 @@ int main()
 						cchat += 'a';
 						break;
 					}
+					else {
+						PlayerSkill[0].m_x = avatar.m_x;
+						PlayerSkill[0].m_y = avatar.m_y - 1;
+						PlayerSkill[0].show();
+						PlayerSkill[1].m_x = avatar.m_x;
+						PlayerSkill[1].m_y = avatar.m_y + 1;
+						PlayerSkill[1].show();
+						PlayerSkill[2].m_x = avatar.m_x - 1;
+						PlayerSkill[2].m_y = avatar.m_y;
+						PlayerSkill[2].show();
+						PlayerSkill[3].m_x = avatar.m_x + 1;
+						PlayerSkill[3].m_y = avatar.m_y;
+						PlayerSkill[3].show();
 
-					PlayerSkill[0].m_x = avatar.m_x;
-					PlayerSkill[0].m_y = avatar.m_y - 1;
-					PlayerSkill[0].show();
-					PlayerSkill[1].m_x = avatar.m_x;
-					PlayerSkill[1].m_y = avatar.m_y + 1;
-					PlayerSkill[1].show();
-					PlayerSkill[2].m_x = avatar.m_x - 1;
-					PlayerSkill[2].m_y = avatar.m_y;
-					PlayerSkill[2].show();
-					PlayerSkill[3].m_x = avatar.m_x + 1;
-					PlayerSkill[3].m_y = avatar.m_y;
-					PlayerSkill[3].show();
-					
-					CS_ATTACK_PACKET p;
-					p.size = sizeof(CS_ATTACK_PACKET);
-					p.type = CS_ATTACK;
-					send_packet(&p);
-
+						CS_ATTACK_PACKET p;
+						p.size = sizeof(CS_ATTACK_PACKET);
+						p.type = CS_ATTACK;
+						send_packet(&p);
+					}
 					break;
 				case sf::Keyboard::Enter:		// 알수 없는 오류로 인해 채팅은 나중에
-					/*CS_CHAT_PACKET chat_packet;
-					chat_packet.size = sizeof(CS_CHAT_PACKET);
-					chat_packet.type = CS_CHAT;
-					chat_packet.target_id = 0;
-					chat_packet.chat_type = CHATTYPE_SHOUT;
+					if (g_isChat)
+					{
+						CS_CHAT_PACKET chat_packet;
+						chat_packet.size = sizeof(chat_packet) - sizeof(chat_packet.mess) + strlen(cchat.c_str()) + 1;
+						chat_packet.type = CS_CHAT;
+						chat_packet.target_id = 0;
+						chat_packet.chat_type = CHATTYPE_SHOUT;
 
-					strcpy_s(chat_packet.mess, cchat.c_str());
-					send_packet(&chat_packet);
-					g_isChat = false;*/
+						strcpy_s(chat_packet.mess, cchat.c_str());
+						send_packet(&chat_packet);
+						g_isChat = !g_isChat;
+						break;
+					}
+					g_isChat = !g_isChat;
 					break;
 				case sf::Keyboard::Escape:
 					window.close();
@@ -761,10 +766,20 @@ int main()
 					pos = sf::Mouse::getPosition(window);
 					if (pos.x > 0 && pos.x < 90 && pos.y > 900 && pos.y < 990)
 					{
-						g_isChat = true;
-						
-						
+						if (g_isChat)
+						{
+							CS_CHAT_PACKET chat_packet;
+							chat_packet.size = sizeof(CS_CHAT_PACKET);
+							chat_packet.type = CS_CHAT;
+							chat_packet.target_id = 0;
+							chat_packet.chat_type = CHATTYPE_SHOUT;
+
+							strcpy_s(chat_packet.mess, cchat.c_str());
+							send_packet(&chat_packet);
+						}
+						g_isChat = !g_isChat;
 					}
+					
 					break;
 				default:
 					break;
