@@ -29,7 +29,7 @@ extern "C" {
 #include "protocol.h"
 #include "Enum.h"
 
-constexpr int RANGE = 11;
+constexpr int RANGE = 15;
 
 #pragma comment(lib, "WS2_32.lib")
 #pragma comment(lib, "MSWSock.lib")
@@ -106,7 +106,6 @@ public:
 	mutex	_sl;
 	SESSION_STATE _s_state;
 	EVENT_TYPE _ev;
-	//int _clientid;
 	SOCKET _socket;
 	int		_id;
 	int		_db_id;
@@ -123,7 +122,6 @@ public:
 	lua_State* L;
 	mutex	vm_l;
 	mutex	run_l;
-	bool isNpcRun;
 	bool isNpcDead;
 	bool isPlay;
 	ATTACKTYPE _attacktype;
@@ -152,7 +150,6 @@ public:
 		_s_state = ST_FREE;
 		_prev_remain = 0;
 		next_move_time = chrono::system_clock::now() + chrono::seconds(1);
-		isNpcRun = false;
 		isNpcDead = false;
 		isPlay = false;
 		_target_id = 10000;
@@ -337,12 +334,12 @@ void process_packet(int c_id, char* packet)
 
 		ConnectedPlayer.push_back(c_id);
 		clients[c_id].my_party.push_back(c_id);
+
 		//clients[c_id].x = rand() % W_WIDTH;
 		//clients[c_id].y = rand() % W_HEIGHT;
 
 		//clients[c_id].x = 0;
 		//clients[c_id].y = 0;
-
 
 		for (int i = 0; i < MAX_USER; ++i) {
 			auto& pl = clients[i];
@@ -456,20 +453,6 @@ void process_packet(int c_id, char* packet)
 				clients[c_id].send_add_object(pl._id);
 			}
 		}
-		////////////////////////////////////////////////////////////////////
-
-		/*for (int i = 0; i < NUM_NPC; ++i) {
-			int npc_id = MAX_USER + i;
-			if (!clients[npc_id].isNpcDead)
-			{
-				if (distance(npc_id, c_id) < RANGE) {
-					auto ex_over = new OVER_EXP;
-					ex_over->_comp_type = OP_RANDOM_MOVE;
-					ex_over->target_id = c_id;
-					PostQueuedCompletionStatus(g_h_iocp, 1, npc_id, &ex_over->_over);
-				}
-			}
-		}*/
 
 		Save_UserInfo(clients[c_id]._db_id, c_id);
 		break;
@@ -941,7 +924,7 @@ void fix_npc(int npc_id, int c_id)
 	}
 	if (clients[npc_id].attack_type == ATTACKTYPE::ATTACKTYPE_AGRO)		// wraith
 	{
-		if (distance(c_id, npc_id) < 3)
+		if (distance(c_id, npc_id) < 5)
 		{
 			if (clients[npc_id]._target_id == 10000)
 				clients[npc_id]._target_id = c_id;
@@ -1048,7 +1031,7 @@ void AttackNPC(int npc_id, int c_id)
 	for (int i = 0; i < MAX_USER; ++i) {
 		if (clients[i]._s_state != ST_INGAME) continue;
 		if (clients[npc_id].y == clients[i].y) {
-			if (abs(clients[npc_id].x - clients[i].x) == 1) {	// 좌우
+			if (abs(clients[npc_id].x - clients[i].x) <= 1) {	// 좌우
 				int AttackPower = clients[npc_id].level * 10;
 				clients[i].hp -= AttackPower;
 
@@ -1061,7 +1044,7 @@ void AttackNPC(int npc_id, int c_id)
 				scp.exp = clients[i].exp;
 				scp.level = clients[i].level;
 
-				if (clients[i].hp < 0)	// 플레이어 사망
+				if (clients[i].hp <= 0)	// 플레이어 사망
 				{
 					cout << clients[npc_id]._name << "[" << clients[npc_id]._id << "] " << "의 공격으로 "
 						<< clients[i]._name << "가 사망하였습니다\n";
@@ -1076,7 +1059,7 @@ void AttackNPC(int npc_id, int c_id)
 					clients[i].y = 0;
 
 					for (int& connected_id : ConnectedPlayer)
-						clients[connected_id].send_move_packet(connected_id, 0);
+						clients[connected_id].send_move_packet(i, 0);
 					break;
 				}
 
@@ -1085,11 +1068,13 @@ void AttackNPC(int npc_id, int c_id)
 				
 				for (int& connected_id : ConnectedPlayer)
 					clients[connected_id].do_send(&scp);
+
+				return;
 			}
 		}
 
 		if (clients[npc_id].x == clients[i].x) {
-			if (abs(clients[npc_id].y - clients[i].y) == 1) {	// 상하
+			if (abs(clients[npc_id].y - clients[i].y) <= 1) {	// 상하
 				int AttackPower = clients[npc_id].level * 10;
 				clients[i].hp -= AttackPower;
 
@@ -1102,7 +1087,7 @@ void AttackNPC(int npc_id, int c_id)
 				scp.exp = clients[i].exp;
 				scp.level = clients[i].level;
 
-				if (clients[i].hp < 0)	// 플레이어 사망
+				if (clients[i].hp <= 0)	// 플레이어 사망
 				{
 					cout << clients[npc_id]._name << "[" << clients[npc_id]._id << "] " << "의 공격으로 "
 						<< clients[i]._name << "가 사망하였습니다\n";
@@ -1115,7 +1100,7 @@ void AttackNPC(int npc_id, int c_id)
 					clients[i].x = 0;
 					clients[i].y = 0;
 					for (int& connected_id : ConnectedPlayer)
-						clients[connected_id].send_move_packet(connected_id, 0);
+						clients[connected_id].send_move_packet(i, 0);
 					break;
 				}
 
@@ -1124,21 +1109,6 @@ void AttackNPC(int npc_id, int c_id)
 
 				for (int& connected_id : ConnectedPlayer)
 					clients[connected_id].do_send(&scp);
-			}
-		}
-	}
-}
-
-void do_ai_ver_1()
-{
-	for (;;) {
-		auto start_t = chrono::system_clock::now();
-		for (int i = 0; i < NUM_NPC; ++i) {
-			int npc_id = i + MAX_USER;
-			if (start_t > clients[npc_id].next_move_time) {
-				//move_npc(npc_id);
-				//AttackNPC(npc_id);
-				clients[npc_id].next_move_time = start_t + chrono::seconds(1);
 			}
 		}
 	}
@@ -1256,86 +1226,6 @@ int API_SendMessage(lua_State* L)
 	strcpy_s(chat_packet.mess, warning_msg.c_str());
 
 	clients[client_id].do_send(&chat_packet);
-
-
-	return 0;
-}
-
-int API_Run(lua_State* L)
-{
-	int client_id = lua_tonumber(L, -5);
-	int npc_id = lua_tonumber(L, -4);
-	int new_x = lua_tonumber(L, -3);
-	int new_y = lua_tonumber(L, -2);
-	int runIndex = lua_tonumber(L, -1);
-	lua_pop(L, 6);
-	
-	
-	if (runIndex > 3)	// 세번 도망침
-	{
-		clients[npc_id].isNpcRun = false;
-		clients[client_id].send_chat_packet(npc_id, "BYE");
-	}
-	else				// 세번 도망치기 전이라면 함수 다시 호출
-	{
-		int randindex = rand() % 4;
-
-		short x = clients[npc_id].x;
-		short y = clients[npc_id].y;
-		unordered_set<int> old_vl;
-		for (int i = 0; i < MAX_USER; ++i) {
-			if (clients[i]._s_state != ST_INGAME) continue;
-			if (distance(npc_id, i) <= RANGE) old_vl.insert(i);
-		}
-		clients[npc_id].run_l.lock();
-		cout << "npc " << npc_id << " is running away ";
-		cout << " x : " << new_x << " y: " << new_y << endl;
-		clients[npc_id].x = new_x;
-		clients[npc_id].y = new_y;
-		clients[npc_id].run_l.unlock();
-
-		unordered_set<int> new_vl;
-		for (int i = 0; i < MAX_USER; ++i) {
-			if (clients[i]._s_state != ST_INGAME) continue;
-			if (distance(npc_id, i) <= RANGE) new_vl.insert(i);
-		}
-
-		for (auto p_id : new_vl) {
-			clients[p_id].vl.lock();
-			if (0 == clients[p_id].view_list.count(npc_id)) {
-				clients[p_id].view_list.insert(npc_id);
-				clients[p_id].vl.unlock();
-				clients[p_id].send_add_object(npc_id);
-			}
-			else {
-				clients[p_id].vl.unlock();
-				clients[p_id].send_move_packet(npc_id, 0);
-			}
-		}
-		for (auto p_id : old_vl) {
-			if (0 == new_vl.count(p_id)) {
-				clients[p_id].vl.lock();
-				if (clients[p_id].view_list.count(npc_id) == 1) {
-					clients[p_id].view_list.erase(npc_id);
-					clients[p_id].vl.unlock();
-					clients[p_id].send_remove_object(npc_id);
-				}
-				else
-					clients[p_id].vl.unlock();
-			}
-		}
-
-		auto start_t = chrono::system_clock::now();
-
-		lua_getglobal(L, "event_npc_run");
-		lua_pushnumber(L, client_id);
-		lua_pushnumber(L, randindex);
-		lua_pushnumber(L, runIndex);
-
-		this_thread::sleep_until(start_t + chrono::seconds(1));
-
-		lua_pcall(L, 3, 0, 0);
-	}
 
 
 	return 0;

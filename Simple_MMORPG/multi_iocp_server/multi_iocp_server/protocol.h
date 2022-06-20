@@ -129,7 +129,7 @@ struct SC_STAT_CHANGE_PACKET {
 };
 
 /////////////////////////////////////////////////// 
-struct SC_PLAYER_ATTACK_PACKET {
+struct SC_PLAYER_ATTACK_PACKET {	// ±¸ÇöÁß...
 	unsigned char size;
 	char	type;
 	int		id;

@@ -20,7 +20,6 @@ using namespace std;
 #pragma comment (lib, "winmm.lib")
 #pragma comment (lib, "ws2_32.lib")
 
-//#include "..\..\multi_iocp_server\multi_iocp_server\protocol.h"
 #include "..\..\multi_iocp_server\multi_iocp_server\protocol.h"
 #include "..\..\multi_iocp_server\multi_iocp_server\Enum.h"
 
@@ -129,8 +128,6 @@ public:
 		float ry = (m_y - g_top_y) * 65.0f + 8;
 		m_sprite.setPosition(rx, ry);
 		g_window->draw(m_sprite);
-		//m_HPBar.setPosition(rx, ry);
-		//g_window->draw(m_HPBar);
 
 		m_name.setPosition(rx, ry - 40);
 		g_window->draw(m_name);
@@ -238,7 +235,6 @@ void draw_chatmessage()
 		chatmessage.setPosition(600, 900);
 		g_window->draw(chatmessage);
 	}
-
 }
 
 OBJECT avatar;
@@ -249,7 +245,6 @@ OBJECT chatUI;
 
 vector<OBJECT> PlayerSkill;
 
-//OBJECT white_tile;
 OBJECT MapObj;
 
 sf::Texture* board;
@@ -296,8 +291,6 @@ void client_initialize()
 		cout << "Font Loading Error!\n";
 		exit(-1);
 	}
-	//black_tile = OBJECT{ *board, 600, 300, TILE_WIDTH, TILE_WIDTH };
-
 	
 	for (int i = 0; i < 8; ++i)
 	{

@@ -155,7 +155,6 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="diablo.lua" />
-    <None Include="hello.lua" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
