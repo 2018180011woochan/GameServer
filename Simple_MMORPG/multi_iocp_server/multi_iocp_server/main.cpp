@@ -423,6 +423,35 @@ void process_packet(int c_id, char* packet)
 				}
 			}
 		}
+		for (int i = 0; i < MAX_USER; ++i) {
+			auto& pl = clients[i];
+			if (pl._id == c_id) continue;
+			pl._sl.lock();
+			if (ST_INGAME != pl._s_state) {
+				pl._sl.unlock();
+				continue;
+			}
+			if (RANGE >= distance(c_id, pl._id)) {
+				pl.vl.lock();
+				pl.view_list.insert(c_id);
+				pl.vl.unlock();
+				pl.send_add_object(c_id);
+			}
+			pl._sl.unlock();
+		}
+		for (auto& pl : clients) {
+			if (pl._id == c_id) continue;
+			if (pl.isNpcDead) continue;
+			lock_guard<mutex> aa{ pl._sl };
+			if (ST_INGAME != pl._s_state) continue;
+
+			if (RANGE >= distance(pl._id, c_id)) {
+				clients[c_id].vl.lock();
+				clients[c_id].view_list.insert(pl._id);
+				clients[c_id].vl.unlock();
+				clients[c_id].send_add_object(pl._id);
+			}
+		}
 		////////////////////////////////////////////////////////////////////
 
 		/*for (int i = 0; i < NUM_NPC; ++i) {
