@@ -476,7 +476,6 @@ void process_packet(int c_id, char* packet)
 						p.size = sizeof(SC_REMOVE_OBJECT_PACKET);
 						p.type = SC_REMOVE_OBJECT;
 						p.id = i;
-						//clients[c_id].do_send(&p);				// 나중에는 접속한 모든 플레이어한테 보내야할듯
 						for (int& connected_id : ConnectedPlayer)
 							clients[connected_id].do_send(&p);
 
@@ -501,18 +500,53 @@ void process_packet(int c_id, char* packet)
 							cout << clients[c_id]._name << "의 레벨이 " << clients[c_id].level
 								<< "가 되었습니다\n";
 						}
-						scp.level = clients[c_id].level;
-						scp.hp = clients[c_id].hp;
-						scp.hpmax = clients[c_id].hpmax;
-						scp.exp = clients[c_id].exp;
-
-						//clients[c_id].do_send(&scp);
-						for (int& connected_id : ConnectedPlayer)
-							clients[connected_id].do_send(&scp);
 
 						cout << clients[c_id]._name << "가 " << clients[i]._name << "["
 							<< clients[i]._id << "] " << "를 무찔러 " << rewardEXP
 							<< "의 경험치를 얻었습니다\n";
+
+						for (auto& p_id : clients[c_id].my_party)
+						{
+							if (c_id == p_id) continue;
+							else
+							{
+								clients[p_id].exp += rewardEXP;
+								cout << clients[c_id]._name << "의 파티원 " << clients[p_id]._name << 
+								 "도 " << rewardEXP << "의 경험치를 얻었습니다\n";
+
+								if (clients[p_id].exp > clients[p_id].maxexp)		// 렙업
+								{
+									clients[p_id].level += 1;
+									clients[p_id].hpmax = clients[p_id].level * 100;
+									clients[p_id].hp = clients[p_id].hpmax;
+									clients[p_id].maxexp = clients[p_id].level * 100;
+									clients[p_id].exp = 0;
+
+									cout << clients[p_id]._name << "의 레벨이 " << clients[p_id].level
+										<< "가 되었습니다\n";
+
+									// 본인의 화면의 파티원들의 레벨도 변해야함
+									scp.id = p_id;
+									scp.level = clients[p_id].level;
+									scp.hp = clients[p_id].hp;
+									scp.hpmax = clients[p_id].hpmax;
+									scp.exp = clients[p_id].exp;
+									clients[c_id].do_send(&scp);
+								}
+							}
+						}
+
+						//clients[c_id].do_send(&scp);
+						for (int& connected_id : ConnectedPlayer)
+						{
+							scp.id = connected_id;
+							scp.level = clients[connected_id].level;
+							scp.hp = clients[connected_id].hp;
+							scp.hpmax = clients[connected_id].hpmax;
+							scp.exp = clients[connected_id].exp;
+							clients[connected_id].do_send(&scp);
+						}
+						
 						clients[i].isNpcDead = true;
 					}
 				}
@@ -540,7 +574,6 @@ void process_packet(int c_id, char* packet)
 						p.size = sizeof(SC_REMOVE_OBJECT_PACKET);
 						p.type = SC_REMOVE_OBJECT;
 						p.id = i;
-						//clients[c_id].do_send(&p);				// 나중에는 접속한 모든 플레이어한테 보내야할듯
 						for (int& connected_id : ConnectedPlayer)
 							clients[connected_id].do_send(&p);
 
@@ -562,17 +595,52 @@ void process_packet(int c_id, char* packet)
 							cout << clients[c_id]._name << "의 레벨이 " << clients[c_id].level
 								<< "가 되었습니다\n";
 						}
-						scp.level = clients[c_id].level;
-						scp.hp = clients[c_id].hp;
-						scp.hpmax = clients[c_id].hpmax;
-						scp.exp = clients[c_id].exp;
 
-						//clients[c_id].do_send(&scp);
-						for (int& connected_id : ConnectedPlayer)
-							clients[connected_id].do_send(&scp);
 						cout << clients[c_id]._name << "가 " << clients[i]._name << "["
 							<< clients[i]._id << "] " << "를 무찔러 " << rewardEXP
 							<< "의 경험치를 얻었습니다\n";
+
+						for (auto& p_id : clients[c_id].my_party)
+						{
+							if (c_id == p_id) continue;
+							else
+							{
+								clients[p_id].exp += rewardEXP;
+								cout << clients[c_id]._name << "의 파티원 " << clients[p_id]._name <<
+									"도 " << rewardEXP << "의 경험치를 얻었습니다\n";
+
+								if (clients[p_id].exp > clients[p_id].maxexp)		// 렙업
+								{
+									clients[p_id].level += 1;
+									clients[p_id].hpmax = clients[p_id].level * 100;
+									clients[p_id].hp = clients[p_id].hpmax;
+									clients[p_id].maxexp = clients[p_id].level * 100;
+									clients[p_id].exp = 0;
+
+									cout << clients[p_id]._name << "의 레벨이 " << clients[p_id].level
+										<< "가 되었습니다\n";
+
+									// 본인의 화면의 파티원들의 레벨도 변해야함
+									scp.id = p_id;
+									scp.level = clients[p_id].level;
+									scp.hp = clients[p_id].hp;
+									scp.hpmax = clients[p_id].hpmax;
+									scp.exp = clients[p_id].exp;
+									clients[c_id].do_send(&scp);
+								}
+							}
+						}
+
+						for (int& connected_id : ConnectedPlayer)
+						{
+							scp.id = connected_id;
+							scp.level = clients[connected_id].level;
+							scp.hp = clients[connected_id].hp;
+							scp.hpmax = clients[connected_id].hpmax;
+							scp.exp = clients[connected_id].exp;
+							clients[connected_id].do_send(&scp);
+						}
+
 						clients[i].isNpcDead = true;
 					}
 				}

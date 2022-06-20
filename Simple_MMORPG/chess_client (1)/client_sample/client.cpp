@@ -449,20 +449,22 @@ void ProcessPacket(char* ptr)
 			avatar.ui_m_HPBar.setTextureRect(sf::IntRect(0, 0, curhp, 10));
 		}
 		else if (my_packet->id < MAX_USER) {
+			if (players[my_packet->id].level != my_packet->level) {
+				char lev[10];
+				sprintf_s(lev, "%d", my_packet->level);
+				players[my_packet->id].set_level(lev);
+			}
 			players[my_packet->id].level = my_packet->level;
 			players[my_packet->id].hp = my_packet->hp;
 			players[my_packet->id].hpmax = my_packet->hpmax;
 
-			players[my_packet->id].level = my_packet->level;
-			players[my_packet->id].hp = my_packet->hp;
-			players[my_packet->id].hpmax = my_packet->hpmax;
+			
+
 			int curhp = 89 * players[my_packet->id].hp / players[my_packet->id].hpmax;
 
 			players[my_packet->id].m_HPBar.setTextureRect(sf::IntRect(0, 0, curhp, 10));
 
-			char lev[10];
-			sprintf_s(lev, "%d", my_packet->level);
-			players[my_packet->id].set_level(lev);
+			
 		}
 		else {
 			npcs[my_packet->id - MAX_USER].level = my_packet->level;
