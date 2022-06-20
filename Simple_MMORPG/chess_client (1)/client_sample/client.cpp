@@ -542,9 +542,16 @@ void ProcessPacket(char* ptr)
 	case SC_CHAT:
 	{
 		SC_CHAT_PACKET* p = reinterpret_cast<SC_CHAT_PACKET*>(ptr);
-
+		
+		string info = "[";
+		if (avatar.id == p->id)
+			info += avatar.my_name;
+		else
+			info += players[p->id].my_name;
+		info += "] : ";
+		info += p->mess;
 		chatmessage.setFont(g_font);
-		chatmessage.setString(p->mess);
+		chatmessage.setString(info);
 		chatmessage.setFillColor(sf::Color(255, 255, 0));
 		chatmessage.setStyle(sf::Text::Bold);
 		g_chatTime = true;
