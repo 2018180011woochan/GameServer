@@ -47,6 +47,9 @@ void Login();
 
 enum NameColor {COLOR_GREEN, COLOR_YELLO, COLOR_RED};
 vector<int> my_party;
+sf::Text chatmessage;
+bool g_chatTime = false;
+
 class OBJECT {
 private:
 	bool m_showing;
@@ -55,12 +58,14 @@ private:
 	sf::Text m_level;
 
 	sf::Text ui_m_name;
+	
 public:
 	int id;
 	int m_x, m_y;
 	int level;
 	int exp, maxexp;
 	int hp, hpmax;
+	char my_name[NAME_SIZE];
 	
 	sf::Sprite m_HPBar;
 	sf::Sprite ui_m_HPBar;
@@ -117,6 +122,7 @@ public:
 		m_x = x;
 		m_y = y;
 	}
+	
 	void draw() {
 		if (false == m_showing) return;
 		float rx = (m_x - g_left_x) * 65.0f + 8;
@@ -226,10 +232,20 @@ public:
 	}
 };
 
+void draw_chatmessage() 
+{
+	if (g_chatTime) {
+		chatmessage.setPosition(700, 900);
+		g_window->draw(chatmessage);
+	}
+
+}
+
 OBJECT avatar;
 OBJECT players[MAX_USER];
 OBJECT npcs[NUM_NPC];
 OBJECT chaticon;
+OBJECT chatUI;
 
 vector<OBJECT> PlayerSkill;
 
@@ -246,6 +262,7 @@ sf::Texture* AttackSource;
 sf::Texture* HPBar;
 sf::Texture* Chatimage;
 sf::Texture* CharPicture;
+sf::Texture* ChatUI;
 
 void client_initialize()
 {
@@ -259,6 +276,7 @@ void client_initialize()
 	HPBar = new sf::Texture;
 	Chatimage = new sf::Texture;
 	CharPicture = new sf::Texture;
+	ChatUI = new sf::Texture;
 
 	board->loadFromFile("Texture/Map/map.bmp");
 	pieces->loadFromFile("Texture/User/player.png");
@@ -270,6 +288,7 @@ void client_initialize()
 	HPBar->loadFromFile("Texture/User/HPBar.bmp");
 	Chatimage->loadFromFile("Texture/User/chaticon.png");
 	CharPicture->loadFromFile("Texture/User/CharPicture.png");
+	ChatUI->loadFromFile("Texture/User/chatui.bmp");
 
 	MapObj = OBJECT{ *board, 0, 0, 2000, 2000 };
 
@@ -295,6 +314,7 @@ void client_initialize()
 	}
 
 	chaticon = OBJECT{ *Chatimage, 0, 0, 90, 90 };
+	chatUI = OBJECT{ *ChatUI, 0, 0, 400, 150 };
 }
 
 void client_finish()
@@ -325,6 +345,7 @@ void ProcessPacket(char* ptr)
 		avatar.hpmax = packet->hpmax;
 		avatar.level = packet->level;
 		avatar.exp = packet->exp;
+		strcpy_s(avatar.my_name, NickName);
 		
 		avatar.set_name(NickName, true);
 
@@ -366,6 +387,7 @@ void ProcessPacket(char* ptr)
 			players[id].set_level(lev);
 			players[id].set_info(my_packet->id, my_packet->level, my_packet->hp, my_packet->hpmax, my_packet->x, my_packet->y);
 			players[id].show();
+			strcpy_s(players[id].my_name, my_packet->name);
 		}
 		else {
 			switch (my_packet->race)
@@ -517,6 +539,18 @@ void ProcessPacket(char* ptr)
 		PlayerSkill[3].m_y = players[attckpacket->id].m_y;
 		PlayerSkill[3].show();
 	}*/
+	case SC_CHAT:
+	{
+		SC_CHAT_PACKET* p = reinterpret_cast<SC_CHAT_PACKET*>(ptr);
+
+		chatmessage.setFont(g_font);
+		chatmessage.setString(p->mess);
+		chatmessage.setFillColor(sf::Color(255, 255, 0));
+		chatmessage.setStyle(sf::Text::Bold);
+		g_chatTime = true;
+		cout << "[" << p->id << "] " << p->mess << "\n";
+		break;
+	}
 	default:
 		printf("Unknown PACKET type [%d]\n", ptr[1]);
 	}
@@ -621,6 +655,10 @@ void client_main()
 	for (auto& pl : npcs) pl.draw_hp(); 
 	chaticon.a_move(0, 900);
 	chaticon.a_draw();
+	chatUI.a_move(700, 900);
+	chatUI.a_draw();
+
+	draw_chatmessage();
 }
 
 void send_packet(void *packet)
@@ -632,21 +670,18 @@ void send_packet(void *packet)
 
 void Login()
 {
-	if (!g_isChat)
-	{
-		int db_id = 0;
-		cout << "ID를 입력하세요 ";
-		cin >> db_id;
-		cout << "닉네임을 입력하세요 ";
-		cin >> NickName;
-		CS_LOGIN_PACKET p;
-		p.size = sizeof(CS_LOGIN_PACKET);
-		p.type = CS_LOGIN;
-		p.db_id = db_id;
+	int db_id = 0;
+	cout << "ID를 입력하세요 ";
+	cin >> db_id;
+	cout << "닉네임을 입력하세요 ";
+	cin >> NickName;
+	CS_LOGIN_PACKET p;
+	p.size = sizeof(CS_LOGIN_PACKET);
+	p.type = CS_LOGIN;
+	p.db_id = db_id;
 
-		strcpy_s(p.name, NickName);
-		send_packet(&p);
-	}
+	strcpy_s(p.name, NickName);
+	send_packet(&p);
 }
 
 int main()
@@ -741,6 +776,7 @@ int main()
 						strcpy_s(chat_packet.mess, cchat.c_str());
 						send_packet(&chat_packet);
 						g_isChat = !g_isChat;
+						cchat = "";
 						break;
 					}
 					g_isChat = !g_isChat;
@@ -769,7 +805,7 @@ int main()
 						if (g_isChat)
 						{
 							CS_CHAT_PACKET chat_packet;
-							chat_packet.size = sizeof(CS_CHAT_PACKET);
+							chat_packet.size = sizeof(chat_packet) - sizeof(chat_packet.mess) + strlen(cchat.c_str()) + 1;
 							chat_packet.type = CS_CHAT;
 							chat_packet.target_id = 0;
 							chat_packet.chat_type = CHATTYPE_SHOUT;
