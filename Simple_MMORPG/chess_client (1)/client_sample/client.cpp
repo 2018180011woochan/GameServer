@@ -235,7 +235,7 @@ public:
 void draw_chatmessage() 
 {
 	if (g_chatTime) {
-		chatmessage.setPosition(700, 900);
+		chatmessage.setPosition(600, 900);
 		g_window->draw(chatmessage);
 	}
 
@@ -465,6 +465,9 @@ void ProcessPacket(char* ptr)
 			avatar.hp = my_packet->hp;
 			avatar.hpmax = my_packet->hpmax;
 			
+			if (avatar.hp < 0)
+				avatar.hp = 0;
+
 			int curhp = 89 * avatar.hp / avatar.hpmax;
 
 			avatar.m_HPBar.setTextureRect(sf::IntRect(0, 0, curhp, 10));
@@ -480,7 +483,8 @@ void ProcessPacket(char* ptr)
 			players[my_packet->id].hp = my_packet->hp;
 			players[my_packet->id].hpmax = my_packet->hpmax;
 
-			
+			if (players[my_packet->id].hp < 0)
+				players[my_packet->id].hp = 0;
 
 			int curhp = 89 * players[my_packet->id].hp / players[my_packet->id].hpmax;
 
@@ -543,6 +547,19 @@ void ProcessPacket(char* ptr)
 	{
 		SC_CHAT_PACKET* p = reinterpret_cast<SC_CHAT_PACKET*>(ptr);
 		
+		if (p->chat_type == CHATTYPE::CHATTYPE_BOSS)
+		{
+			string info = "Diablo";
+			info += ": ";
+			info += p->mess;
+			chatmessage.setFont(g_font);
+			chatmessage.setString(info);
+			chatmessage.setFillColor(sf::Color(255, 0, 0));
+			chatmessage.setStyle(sf::Text::Bold);
+			g_chatTime = true;
+			break;
+		}
+
 		string info = "[";
 		if (avatar.id == p->id)
 			info += avatar.my_name;
@@ -662,7 +679,7 @@ void client_main()
 	for (auto& pl : npcs) pl.draw_hp(); 
 	chaticon.a_move(0, 900);
 	chaticon.a_draw();
-	chatUI.a_move(700, 900);
+	chatUI.a_move(600, 900);
 	chatUI.a_draw();
 
 	draw_chatmessage();
@@ -819,6 +836,7 @@ int main()
 
 							strcpy_s(chat_packet.mess, cchat.c_str());
 							send_packet(&chat_packet);
+							cchat = "";
 						}
 						g_isChat = !g_isChat;
 					}

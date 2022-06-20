@@ -4,6 +4,19 @@ function set_object_id (id)
 my_id = id
 end
 
+function event_boss_skill(playerid, skillindex)
+	newSkillidx = skillindex + 1;
+
+	if (newSkillidx <= 2) then
+		API_Chat(playerid, my_id, newSkillidx);
+	end
+	if (newSkillidx == 3) then
+		Boss_Skill(playerid, my_id, newSkillidx);
+	end
+	
+end
+
+
 function event_boss_move(dir)
 	my_x = API_get_x(my_id)
 	my_y = API_get_y(my_id)

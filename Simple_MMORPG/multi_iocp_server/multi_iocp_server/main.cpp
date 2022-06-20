@@ -132,6 +132,7 @@ public:
 	vector<int> my_party;
 	chrono::system_clock::time_point next_move_time;
 	int		_prev_remain;
+	short   _skill_cnt;
 public:
 	SESSION()
 	{
@@ -1009,10 +1010,23 @@ void roaming_npc(int npc_id, int c_id)
 
 	if (clients[npc_id].attack_type == ATTACKTYPE::ATTACKTYPE_AGRO)		// diablo
 	{
+		
 		if (distance(c_id, npc_id) < 5)
 		{
 			if (clients[npc_id]._target_id == 10000)
 				clients[npc_id]._target_id = c_id;
+		}
+		if (distance(c_id, npc_id) == 0)
+		{
+			auto L = clients[npc_id].L;
+			clients[npc_id].vm_l.lock();
+			lua_getglobal(L, "event_boss_skill");
+			lua_pushnumber(L, c_id);
+			lua_pushnumber(L, clients[npc_id]._skill_cnt);
+			clients[npc_id]._skill_cnt += 1;
+			lua_pcall(L, 2, 0, 0);
+			clients[npc_id].vm_l.unlock();
+			clients[npc_id]._target_id = 10000;
 		}
 		if (clients[npc_id]._target_id != 10000)
 			chase_player(npc_id, clients[npc_id]._target_id);
@@ -1228,25 +1242,22 @@ bool isAllowAccess(int db_id, int cid)
 int API_SendMessage(lua_State* L)
 {
 	int client_id = lua_tonumber(L, -3);
-	int npc_id = lua_tonumber(L, -2);
-	const char* mess = lua_tostring(L, -1);
+	int diablo_id = lua_tonumber(L, -2);
+	int skill_idx = lua_tonumber(L, -1);
 	lua_pop(L, 4);
 
-	clients[client_id].send_chat_packet(npc_id, mess);
-	
-	// 메세지 보냈으면 도망 코드 실행
+	string warning_msg = "Fear me!!";
 
-	clients[npc_id].isNpcRun = true;
-	int randindex = rand() % 4;
+	SC_CHAT_PACKET chat_packet;
+	chat_packet.size = sizeof(chat_packet) - sizeof(chat_packet.mess) + strlen(warning_msg.c_str()) + 1;
+	chat_packet.type = SC_CHAT;
+	chat_packet.chat_type = CHATTYPE_BOSS;
+	chat_packet.id = diablo_id;
+	strcpy_s(chat_packet.mess, warning_msg.c_str());
 
-	clients[client_id].vm_l.lock();
-	lua_getglobal(L, "event_npc_run");
-	lua_pushnumber(L, client_id);
-	lua_pushnumber(L, randindex);
-	lua_pushnumber(L, 0);		// 처음 run함수 실행시킬땐 runindex = 0
-	lua_pcall(L, 3, 0, 0);
-	clients[client_id].vm_l.unlock();
-	
+	clients[client_id].do_send(&chat_packet);
+
+
 	return 0;
 }
 
@@ -1402,6 +1413,40 @@ int API_BossMove(lua_State* L)
 	return 1;
 }
 
+int API_BossSkil(lua_State* L)
+{
+	int client_id = lua_tonumber(L, -3);
+	int diablo_id = lua_tonumber(L, -2);
+	int skill_idx = lua_tonumber(L, -1);
+	lua_pop(L, 4);
+	clients[diablo_id]._skill_cnt = 0;
+	string warning_msg = "uhahaha!!!!";
+
+	SC_CHAT_PACKET chat_packet;
+	chat_packet.size = sizeof(chat_packet) - sizeof(chat_packet.mess) + strlen(warning_msg.c_str()) + 1;
+	chat_packet.type = SC_CHAT;
+	chat_packet.chat_type = CHATTYPE_BOSS;
+	chat_packet.id = diablo_id;
+	strcpy_s(chat_packet.mess, warning_msg.c_str());
+
+	clients[client_id].do_send(&chat_packet);
+
+	int AttackPower = 10000;
+	clients[client_id].hp -= AttackPower;
+
+	SC_STAT_CHANGE_PACKET scp;
+	scp.size = sizeof(SC_STAT_CHANGE_PACKET);
+	scp.type = SC_STAT_CHANGE;
+	scp.id = client_id;
+	scp.hp = clients[client_id].hp;
+	scp.hpmax = clients[client_id].hpmax;
+	scp.exp = clients[client_id].exp;
+	scp.level = clients[client_id].level;
+	clients[client_id].do_send(&scp);
+
+	return 1;
+}
+
 void initialize_npc()
 {
 	for (int i = 0; i < NUM_NPC + MAX_USER; ++i)
@@ -1479,6 +1524,8 @@ void initialize_npc()
 		lua_register(L, "API_get_x", API_get_x);
 		lua_register(L, "API_get_y", API_get_y);
 		lua_register(L, "Boss_Move", API_BossMove);
+		lua_register(L, "Boss_Skill", API_BossSkil); 
+		lua_register(L, "API_Chat", API_SendMessage);
 	}
 
 	cout << "NPC Initialization complete.\n";
