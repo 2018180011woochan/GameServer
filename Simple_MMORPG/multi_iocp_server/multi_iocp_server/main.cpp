@@ -425,7 +425,7 @@ void process_packet(int c_id, char* packet)
 		}
 		////////////////////////////////////////////////////////////////////
 
-		for (int i = 0; i < NUM_NPC; ++i) {
+		/*for (int i = 0; i < NUM_NPC; ++i) {
 			int npc_id = MAX_USER + i;
 			if (!clients[npc_id].isNpcDead)
 			{
@@ -436,7 +436,7 @@ void process_packet(int c_id, char* packet)
 					PostQueuedCompletionStatus(g_h_iocp, 1, npc_id, &ex_over->_over);
 				}
 			}
-		}
+		}*/
 
 		Save_UserInfo(clients[c_id]._db_id, c_id);
 		break;
@@ -1028,11 +1028,22 @@ void do_ai_ver_heat_beat()
 {
 	for (;;) {
 		auto start_t = chrono::system_clock::now();
-		for (int i = 0; i < NUM_NPC; ++i) {
-			int npc_id = i + MAX_USER;
-			/*move_npc(npc_id);
-			AttackNPC(npc_id);*/
-			//do_timer();
+
+		for (int i = 10000; i < NUM_NPC; ++i)
+		{
+			for (auto& c_id : ConnectedPlayer)
+			{
+				if (distance(i, c_id) < 11)
+				{
+					if (!clients[i].isNpcDead)
+					{
+						auto ex_over = new OVER_EXP;
+						ex_over->_comp_type = OP_RANDOM_MOVE;
+						ex_over->target_id = c_id;
+						PostQueuedCompletionStatus(g_h_iocp, 1, i, &ex_over->_over);
+					}
+				}
+			}
 		}
 		
 		auto end_t = chrono::system_clock::now();
@@ -1482,8 +1493,8 @@ int main()
 	for (int i = 0; i < 6; ++i)
 		worker_threads.emplace_back(do_worker);
 
-	//thread ai_thread{ do_timer };
-	//ai_thread.join();
+	thread ai_thread{ do_ai_ver_heat_beat };
+	ai_thread.join();
 	
 	for (auto& th : worker_threads)
 		th.join();

@@ -46,7 +46,7 @@ char NickName[200] = "ALEX Jr";
 void Login();
 
 enum NameColor {COLOR_GREEN, COLOR_YELLO, COLOR_RED};
-
+vector<int> my_party;
 class OBJECT {
 private:
 	bool m_showing;
@@ -61,7 +61,7 @@ public:
 	int level;
 	int exp, maxexp;
 	int hp, hpmax;
-	vector<int> my_party;
+	
 	sf::Sprite m_HPBar;
 	sf::Sprite ui_m_HPBar;
 
@@ -307,7 +307,7 @@ void ProcessPacket(char* ptr)
 		
 		avatar.set_name(NickName, true);
 
-		avatar.my_party.push_back(avatar.id);
+		my_party.push_back(avatar.id);
 
 		char lev[10];
 		sprintf_s(lev, "%d", avatar.level);
@@ -474,7 +474,7 @@ void ProcessPacket(char* ptr)
 	{
 		SC_PARTY_PACKET* packet = reinterpret_cast<SC_PARTY_PACKET*>(ptr);
 		if (packet->id == avatar.id) break;
-		avatar.my_party.push_back(packet->id);
+		my_party.push_back(packet->id);
 		break;
 	}
 	/*case SC_PLAYER_ATTACK:	// ³ªÁß¿¡
@@ -585,7 +585,15 @@ void client_main()
 		}
 	}
 
-	for (auto& pl : players) pl.draw();
+	for (auto& pl : players)
+	{
+		for (auto& party : my_party)
+		{
+			if (party == pl.id)
+				pl.draw_ui();
+		}
+		pl.draw();
+	}
 	for (auto& pl : npcs) pl.draw(); 
 	chaticon.a_move(0, 900);
 	chaticon.a_draw();
